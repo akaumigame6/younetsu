@@ -1,0 +1,112 @@
+// このファイルを更新したら...
+// 0. `npm run dev` や `npx prisma studio` を停止
+// 1. dev.db を削除
+// 2. npx prisma db push
+// 3. npx prisma generate
+// 4. npx prisma db seed
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+
+// ========================
+// Creator (作家)
+// ========================
+model Creator {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  shareToken  String  @unique @default(cuid())
+  iconUrl     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  feedbackRecords FeedbackRecord[]
+}
+
+// ========================
+// FeedbackRecord (作家への感想)
+// ========================
+model FeedbackRecord {
+  id        String  @id @default(uuid())
+  creatorId String
+  creator   Creator @relation(fields: [creatorId], references: [id])
+
+  viewerId  String?
+
+  inputType        String   // "free" または "questions"
+  content          String
+  q1               String[]
+  q2               String?
+  q3               String?
+
+  // SurveyRecordとは1対多のため直接外部キーのみ残す（スキップした場合はnull）
+  surveyRecordId String?
+  surveyRecord   SurveyRecord? @relation(fields: [surveyRecordId], references: [id])
+
+  reaction  String?
+  isRead   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ========================
+// SurveyRecord (イベント全体アンケート)
+// ========================
+model SurveyRecord {
+  id      String @id @default(uuid())
+  eventId String // 追加
+  event   Event  @relation(fields: [eventId], references: [id]) // 追加
+
+  viewerId  String?
+
+  inputType        String // "free" または "questions"
+  content          String
+  q1               String[]
+  q2               String?
+  q3               String?
+  referralSources  String[]
+
+  feedbacks FeedbackRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ========================
+// Event
+// ========================
+model Event {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  date        DateTime
+  location    String?
+
+
+
+  // 質問プレースホルダー
+  eventQ2Placeholder     String?
+  eventQ3Placeholder     String?
+  creatorQ2Placeholder   String?
+  creatorQ3Placeholder   String?
+  freeEventPlaceholder   String?
+  freeCreatorPlaceholder String?
+
+  // 「何でイベントを知ったか」の選択肢 (カンマ区切りなどで保存)
+  referralSources        String?
+
+  surveyRecords SurveyRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
