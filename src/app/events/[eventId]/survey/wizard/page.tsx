@@ -25,7 +25,7 @@ function SurveyWizardContent() {
   );
   const [hasFetched, setHasFetched] = useState(false);
 
-  const { viewerId, isAuthReady } = useViewerFeedback();
+  const { userId, isAuthReady } = useViewerFeedback();
   const { settings } = useEventSettings();
 
   const isEvent = context === 'event';
@@ -78,20 +78,17 @@ function SurveyWizardContent() {
   // 既存データの自動取得
   useEffect(() => {
     const fetchExisting = async () => {
-      if (!viewerId || hasFetched || editId) {
+      if (!userId || hasFetched || editId) {
         setHasFetched(true);
         return;
       }
       try {
         let existingData = null;
         if (isEvent && eventId) {
-          const { data } = await getExistingEventFeedback(viewerId, eventId);
-          if (data && data.q1) data.q1 = JSON.parse(data.q1);
-          if (data && data.referralSources) data.referralSources = JSON.parse(data.referralSources);
+          const { data } = await getExistingEventFeedback(userId, eventId);
           existingData = data;
         } else if (exhibitId) {
-          const { data } = await getExistingExhibitFeedback(viewerId, exhibitId);
-          if (data && data.q1) data.q1 = JSON.parse(data.q1);
+          const { data } = await getExistingExhibitFeedback(userId, exhibitId);
           existingData = data;
         }
 
@@ -137,7 +134,7 @@ function SurveyWizardContent() {
       }
     };
     fetchExisting();
-  }, [viewerId, hasFetched, isEvent, exhibitId, editId]);
+  }, [userId, hasFetched, isEvent, exhibitId, editId]);
 
   // ==== Step Handlers ====
   const handleNextStep = () => setStep((s) => s + 1);
@@ -164,7 +161,7 @@ function SurveyWizardContent() {
 
   // ==== Submit Handler ====
   const handleSubmit = async () => {
-    if (!viewerId) {
+    if (!userId) {
       alert('認証の初期化が完了していません。少し待ってから再度お試しください。');
       return;
     }
@@ -190,8 +187,8 @@ function SurveyWizardContent() {
 
         const payload: any = {
           ...baseData,
-          customAnswers: JSON.stringify(customAnswers),
-          viewerId,
+          customAnswers: customAnswers,
+          userId,
           updatedAt: timestamp
         };
 
@@ -214,7 +211,7 @@ function SurveyWizardContent() {
         if (exhibitId) {
           const payload: any = {
             ...baseData,
-            viewerId,
+            userId,
             updatedAt: timestamp
           };
 
@@ -322,8 +319,8 @@ function SurveyWizardContent() {
   // Step 1: 形式選択
   const renderStep1 = () => (
     <div className="fade-in">
-      <h1 className="title">{isEvent ? 'イベントアンケート' : '小枠への感想'}</h1>
-      <p className="subtitle">感想の入力方法を選んでください。</p>
+      <h1 className="title">{isEvent ? 'イベントアンケート' : `${settings.exhibitTerm || '個別枠'}への感想`}</h1>
+      <p className="subtitle" style={{ fontSize: '0.85rem' }}>感想の入力方法を選んでください。</p>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '32px' }}>
         <button 
@@ -336,7 +333,8 @@ function SurveyWizardContent() {
             自由に記述する
           </div>
           <div style={{ fontSize: '0.9rem', color: 'var(--color-text-light)', textAlign: 'left' }}>
-            ご自身の言葉で自由に感想を書きたい方はこちら
+            ご自身の言葉で自由に感想を書きたい方はこちら<br/>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-primary)', display: 'inline-block', marginTop: '4px' }}>所要時間の目安：約3分</span>
           </div>
         </button>
 
@@ -350,7 +348,8 @@ function SurveyWizardContent() {
             3つの質問から構成する
           </div>
           <div style={{ fontSize: '0.9rem', color: 'var(--color-text-light)', textAlign: 'left' }}>
-            「どんな感情になったか」「どこでそう感じたか」などの簡単な質問に答えるだけで、AIが文章を生成します。
+            「どんな感情になったか」「どこでそう感じたか」などの簡単な質問に答えるだけで、AIが文章を生成します。<br/>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-primary)', display: 'inline-block', marginTop: '4px' }}>所要時間の目安：約1〜2分</span>
           </div>
         </button>
       </div>
@@ -883,7 +882,7 @@ function SurveyWizardContent() {
         <h1 className="title">送信内容の確認</h1>
         <p className="subtitle">
           以下の内容で
-          {isEvent ? <strong>イベント主催者</strong> : <strong>「{exhibit?.name || '小枠'}」</strong>}
+          {isEvent ? <strong>イベント主催者</strong> : <strong>「{exhibit?.name || settings.exhibitTerm || '個別枠'}」</strong>}
           に送信します。
         </p>
 
@@ -962,7 +961,7 @@ function SurveyWizardContent() {
       <div style={{ marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--color-text-light)', marginBottom: '8px' }}>
           <span>Step {currentProgressStep} / {maxSteps}</span>
-          <span>{isEvent ? 'イベントアンケート' : '小枠への感想'}</span>
+          <span>{isEvent ? 'イベントアンケート' : `${settings.exhibitTerm || '個別枠'}への感想`}</span>
         </div>
         <div className="progress-bar-container">
           <div className="progress-bar-fill" style={{ width: `${progressPercent}%`, transition: 'width 0.3s ease' }} />

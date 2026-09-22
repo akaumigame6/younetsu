@@ -4,14 +4,14 @@ import type { FeedbackData, SurveyData } from '../types';
 import { supabase } from '../lib/supabase';
 
 interface ViewerFeedbackContextType {
-  viewerId: string | null;
+  userId: string | null;
   isAuthReady: boolean;
 }
 
 const ViewerFeedbackContext = createContext<ViewerFeedbackContextType | undefined>(undefined);
 
 export const ViewerFeedbackProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [viewerId, setViewerId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   // Supabase 匿名ログイン
@@ -24,12 +24,12 @@ export const ViewerFeedbackProvider: React.FC<{ children: ReactNode }> = ({ chil
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          setViewerId(session.user.id);
+          setUserId(session.user.id);
         } else {
           const { data, error } = await supabase.auth.signInAnonymously();
           if (error) throw error;
           if (data?.user) {
-            setViewerId(data.user.id);
+            setUserId(data.user.id);
           }
         }
       } catch (error) {
@@ -42,7 +42,7 @@ export const ViewerFeedbackProvider: React.FC<{ children: ReactNode }> = ({ chil
   }, []);
 
   return (
-    <ViewerFeedbackContext.Provider value={{ viewerId, isAuthReady }}>
+    <ViewerFeedbackContext.Provider value={{ userId, isAuthReady }}>
       {children}
     </ViewerFeedbackContext.Provider>
   );

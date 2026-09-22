@@ -22,13 +22,13 @@ export default function MyFeedbackDetail() {
       
       // まずFeedbackRecordから探す
       let { data, error } = await getExhibitFeedbackById(id);
-      if (data && data.q1) data.q1 = JSON.parse(data.q1);
+      if (data && data.q1) data.q1 = data.q1;
       if (data) {
         setFeedback({ id: data.id, type: 'exhibit', exhibitId: data.exhibitId, data: data, timestamp: data.createdAt });
       } else {
         // なければSurveyRecordを探す
         const { data: survey } = await getEventFeedbackById(id);
-        if (survey && survey.q1) survey.q1 = JSON.parse(survey.q1);
+        if (survey && survey.q1) survey.q1 = survey.q1;
         if (survey) {
           setFeedback({ id: survey.id, type: 'event', data: survey, timestamp: survey.createdAt });
         }
@@ -45,9 +45,9 @@ export default function MyFeedbackDetail() {
         .then(data => {
           const found = data.find((c: Exhibit) => c.id === feedback.exhibitId);
           if (found) setExhibitName(found.name);
-          else setExhibitName('不明な小枠（作家等）');
+          else setExhibitName(`不明な${settings?.exhibitTerm || '個別枠'}`);
         })
-        .catch(() => setExhibitName('不明な小枠（作家等）'));
+        .catch(() => setExhibitName(`不明な${settings?.exhibitTerm || '個別枠'}`));
     }
   }, [feedback, eventId]);
 
@@ -105,7 +105,7 @@ export default function MyFeedbackDetail() {
             color: 'var(--color-primary)', padding: '4px 8px', borderRadius: '16px',
             fontSize: '0.75rem', fontWeight: 600
           }}>
-            <CheckCheck size={14} /> 小枠（作家等）がこの感想を読みました！
+            <CheckCheck size={14} /> この感想が読まれました！
           </div>
         )}
       </div>

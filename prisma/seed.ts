@@ -13,7 +13,7 @@ async function main() {
     event = await prisma.event.create({
       data: {
         id: 'dummy-event',
-        adminId: 'dummy-admin',
+        userId: 'dummy-admin',
         title: '緑市 マルシェ (Mock)',
         description: 'モックデータ用のイベント',
         startDate: new Date(),
@@ -25,7 +25,7 @@ async function main() {
         creatorQ3Placeholder: '例：不思議な魅力があったから',
         freeEventPlaceholder: '例：素晴らしい体験でした。特に〇〇が印象に残りました。',
         freeCreatorPlaceholder: '例：素晴らしい体験でした。特に〇〇が印象に残りました。',
-        referralSources: 'X(旧Twitter),Instagram,ポスター/チラシ,知人の紹介,その他',
+        referralSources: ['X(旧Twitter)', 'Instagram', 'ポスター/チラシ', '知人の紹介', 'その他'],
       }
     });
     console.log(`Created event: ${event.title}`);
@@ -59,7 +59,7 @@ async function main() {
           exhibitId: feedback.exhibitId,
           inputType: feedback.inputType,
           content: feedback.content,
-          q1: JSON.stringify(feedback.q1 || []),
+          q1: feedback.q1 || [],
           q2: feedback.q2,
           q3: feedback.q3,
           reaction: feedback.reaction,
@@ -82,10 +82,10 @@ async function main() {
           eventId: event.id, // イベントは上で取得/作成したものを強制利用
           inputType: feedback.inputType,
           content: feedback.content,
-          q1: JSON.stringify(feedback.q1 || []),
+          q1: feedback.q1 || [],
           q2: feedback.q2,
           q3: feedback.q3,
-          referralSources: '[]',
+          referralSources: [],
           createdAt: new Date(feedback.createdAt),
           updatedAt: new Date(feedback.updatedAt),
         }

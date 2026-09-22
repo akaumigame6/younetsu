@@ -10,7 +10,7 @@ export default function AdminEventsList() {
   const router = useRouter();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // モーダル用ステート
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,10 +38,10 @@ export default function AdminEventsList() {
         return;
       }
       
-      const userId = session.user.id;
-      setAdminId(userId);
-
-      const { data, error } = await getAdminEvents(userId);
+      const uid = session.user.id;
+      setUserId(uid);
+      
+      const { data, error } = await getAdminEvents(uid);
       if (data) {
         setEvents(data);
       } else {
@@ -54,7 +54,7 @@ export default function AdminEventsList() {
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adminId || !newEventTitle || !newEventStartDate || !newEventEndDate) return;
+    if (!userId || !newEventTitle || !newEventStartDate || !newEventEndDate) return;
 
     if (!hasEventSurvey && !hasExhibits) {
       alert('イベントの感想（大枠）か個別枠の感想（小枠）のどちらかはONにしてください。');
@@ -67,7 +67,7 @@ export default function AdminEventsList() {
       startDate: new Date(newEventStartDate),
       endDate: new Date(newEventEndDate),
       location: newEventLocation,
-      adminId: adminId,
+      userId: userId,
       eventType: eventType,
       hasEventSurvey: hasEventSurvey,
       hasExhibits: hasExhibits,

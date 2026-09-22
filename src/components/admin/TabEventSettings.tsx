@@ -14,7 +14,7 @@ export default function TabEventSettings() {
   const [customQuestions, setCustomQuestions] = useState<any[]>(() => {
     try {
       if (settings.customQuestions) {
-        return JSON.parse(settings.customQuestions);
+        return settings.customQuestions;
       }
     } catch (e) {}
     return [];
@@ -22,9 +22,8 @@ export default function TabEventSettings() {
 
   const defaultReferrals = ['SNS（X, Instagram等）', '友人・知人の紹介', 'ポスター・チラシ', 'その他'];
   const [referralList, setReferralList] = useState<string[]>(() => {
-    if (settings.referralSources) {
-      const parsed = settings.referralSources.split(',').map(s => s.trim()).filter(Boolean);
-      if (parsed.length > 0) return parsed;
+    if (settings.referralSources && Array.isArray(settings.referralSources)) {
+      return settings.referralSources.filter(Boolean);
     }
     return defaultReferrals;
   });
@@ -33,23 +32,23 @@ export default function TabEventSettings() {
   useEffect(() => {
     if (settings.eventId && settings.eventId !== localSettings.eventId) {
       setLocalSettings(settings);
-      if (settings.referralSources) {
-        setReferralList(settings.referralSources.split(',').map(s => s.trim()).filter(Boolean));
+      if (settings.referralSources && Array.isArray(settings.referralSources)) {
+        setReferralList(settings.referralSources.filter(Boolean));
       }
       if (settings.customQuestions) {
         try {
-          setCustomQuestions(JSON.parse(settings.customQuestions));
+          setCustomQuestions(settings.customQuestions);
         } catch (e) {}
       }
     }
   }, [settings, localSettings.eventId]);
 
   useEffect(() => {
-    setLocalSettings(prev => ({ ...prev, referralSources: referralList.join(',') }));
+    setLocalSettings(prev => ({ ...prev, referralSources: referralList }));
   }, [referralList]);
 
   useEffect(() => {
-    setLocalSettings(prev => ({ ...prev, customQuestions: JSON.stringify(customQuestions) }));
+    setLocalSettings(prev => ({ ...prev, customQuestions: customQuestions }));
   }, [customQuestions]);
 
   // ブラウザ環境のみ window にアクセス

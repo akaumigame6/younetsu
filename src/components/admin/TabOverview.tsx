@@ -33,7 +33,7 @@ export default function TabOverview({
         let refs: string[] = [];
         if (s.customAnswers) {
           try {
-            const parsed = JSON.parse(s.customAnswers);
+            const parsed = s.customAnswers;
             if (parsed['q_referral']) {
               refs = Array.isArray(parsed['q_referral']) ? parsed['q_referral'] : [parsed['q_referral']];
             }

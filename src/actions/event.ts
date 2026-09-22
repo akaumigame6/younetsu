@@ -35,8 +35,8 @@ export async function getEvent(eventId?: string) {
           creatorQ3Placeholder: '例：不思議な魅力があったから',
           freeEventPlaceholder: '例：素晴らしい体験でした。特に〇〇が印象に残りました。',
           freeCreatorPlaceholder: '例：素晴らしい体験でした。特に〇〇が印象に残りました。',
-          referralSources: 'X(旧Twitter),Instagram,ポスター/チラシ,知人の紹介,その他',
-          adminId: 'dummy-admin-id',
+          referralSources: ['X(旧Twitter)', 'Instagram', 'ポスター/チラシ', '知人の紹介', 'その他'],
+          userId: 'dummy-admin-id',
         }
       });
     }
@@ -59,10 +59,10 @@ export async function getLatestEventId() {
   }
 }
 
-export async function getAdminEvents(adminId: string) {
+export async function getAdminEvents(userId: string) {
   try {
     const events = await prisma.event.findMany({
-      where: { adminId },
+      where: { userId },
       orderBy: { createdAt: 'desc' }
     });
     return { data: events, error: null };
@@ -78,7 +78,7 @@ export async function createEvent(data: {
   startDate: Date;
   endDate: Date;
   location?: string;
-  adminId: string;
+  userId: string;
   eventType: string;
   hasEventSurvey: boolean;
   hasExhibits: boolean;
@@ -96,7 +96,7 @@ export async function createEvent(data: {
         creatorQ3Placeholder: '例：不思議な魅力があったから',
         freeEventPlaceholder: '例：素晴らしい体験でした。特に〇〇が印象に残りました。',
         freeCreatorPlaceholder: '例：素晴らしい体験でした。特に〇〇が印象に残りました。',
-        referralSources: 'X(旧Twitter),Instagram,ポスター/チラシ,知人の紹介,その他',
+        referralSources: payload.referralSources || ['X(旧Twitter)', 'Instagram', 'ポスター/チラシ', '知人の紹介', 'その他'],
         ...(exhibitNames && exhibitNames.length > 0
           ? {
               exhibits: {

@@ -11,14 +11,14 @@ export async function POST(request: Request) {
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   // ユーザーIDは固定のテスト用IDを使う
-  const adminId = 'dev-admin';
+  const userId = 'dev-admin';
 
   try {
-    const customQuestionsStr = JSON.stringify([
+    const customQuestionsArr = [
       { id: 'q_referral', type: 'checkbox', label: 'どこで知りましたか？', options: ['Twitter', 'Instagram', '知人の紹介', 'ポスター', 'その他'] },
       { id: 'q_age', type: 'radio', label: '年代', options: ['10代', '20代', '30代', '40代以上'] },
       { id: 'q_gender', type: 'radio', label: '性別', options: ['男性', '女性', '回答しない'] }
-    ]);
+    ];
 
     const eventsData = [
       {
@@ -27,10 +27,10 @@ export async function POST(request: Request) {
         description: 'イベント感想ON / 小枠ON / カスタム質問あり',
         startDate: new Date(),
         endDate: new Date(),
-        adminId,
+        userId,
         hasEventSurvey: true,
         hasExhibits: true,
-        customQuestions: customQuestionsStr,
+        customQuestions: customQuestionsArr,
       },
       {
         id: 'test-pattern-b',
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         description: 'イベント感想OFF / 小枠ON / (カスタム質問なし)',
         startDate: new Date(),
         endDate: new Date(),
-        adminId,
+        userId,
         hasEventSurvey: false,
         hasExhibits: true,
         customQuestions: null,
@@ -49,10 +49,10 @@ export async function POST(request: Request) {
         description: 'イベント感想ON / 小枠OFF / カスタム質問あり',
         startDate: new Date(),
         endDate: new Date(),
-        adminId,
+        userId,
         hasEventSurvey: true,
         hasExhibits: false,
-        customQuestions: customQuestionsStr,
+        customQuestions: customQuestionsArr,
       },
       {
         id: 'test-pattern-d',
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
         description: 'イベント感想ON / 小枠ON / カスタム質問なし',
         startDate: new Date(),
         endDate: new Date(),
-        adminId,
+        userId,
         hasEventSurvey: true,
         hasExhibits: true,
         customQuestions: null,

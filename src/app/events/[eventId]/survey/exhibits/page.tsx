@@ -2,6 +2,7 @@
 import { useRouter, useParams } from 'next/navigation';
 import { SkipForward, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useEventSettings } from '../../../../../context/EventSettingsContext';
 import type { Exhibit } from '../../../../../types';
 
 /**
@@ -13,6 +14,7 @@ export default function ExhibitSelect() {
   const router = useRouter();
   const params = useParams();
   const eventId = params?.eventId as string | undefined;
+  const { settings } = useEventSettings();
 
   const [exhibits, setExhibits] = useState<Exhibit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,17 +58,17 @@ export default function ExhibitSelect() {
           marginBottom: '8px',
         }}>
           <span>Step 2 / 2</span>
-          <span>小枠（作家等）への感想（任意）</span>
+          <span>{settings.exhibitTerm || '個別枠'}への感想（任意）</span>
         </div>
         <div className="progress-bar-container">
           <div className="progress-bar-fill" style={{ width: '100%' }} />
         </div>
       </div>
 
-      <h1 className="title">気になった小枠（作家等）はいましたか？</h1>
+      <h1 className="title">気になった{settings.exhibitTerm || '個別枠'}がありましたか？</h1>
       <p className="subtitle">
         良ければ、直接感想を届けてみてください。<br />
-        選ばなくてもOKです。
+        飛ばしてもOKです。
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>

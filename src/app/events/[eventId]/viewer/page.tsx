@@ -28,7 +28,7 @@ export default function ViewerMenu() {
   const eventId = params?.eventId as string | undefined;
 
   const { settings } = useEventSettings();
-  const { viewerId } = useViewerFeedback();
+  const { userId } = useViewerFeedback();
   const [exhibits, setExhibits] = useState<Exhibit[]>([]);
   const [feedbacks, setFeedbacks] = useState<NormalizedFeedback[]>([]);
 
@@ -43,13 +43,13 @@ export default function ViewerMenu() {
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
-      if (!viewerId) return;
+      if (!userId) return;
       try {
         // イベントアンケート取得
-        const { data: surveys, error: surveyError } = await getEventFeedbacksByViewer(viewerId);
+        const { data: surveys, error: surveyError } = await getEventFeedbacksByViewer(userId);
         
         // 小枠（作家等）感想取得
-        const { data: exhibitFeedbacks, error: feedbackError } = await getExhibitFeedbacksByViewer(viewerId);
+        const { data: exhibitFeedbacks, error: feedbackError } = await getExhibitFeedbacksByViewer(userId);
 
         const normalized: NormalizedFeedback[] = [];
         
@@ -58,6 +58,7 @@ export default function ViewerMenu() {
             normalized.push({
               id: s.id,
               type: 'event',
+              isRead: s.isRead,
               data: s,
               timestamp: s.createdAt.toISOString()
             });
@@ -86,7 +87,7 @@ export default function ViewerMenu() {
     };
     
     fetchFeedbacks();
-  }, [viewerId]);
+  }, [userId]);
 
   return (
     <div className="content-area fade-in" style={{ justifyContent: 'flex-start' }}>
@@ -98,9 +99,24 @@ export default function ViewerMenu() {
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {settings.hasEventSurvey && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <button
+              className="btn-primary"
+              onClick={() => {
+                const nextPath = eventId ? `/events/${eventId}/survey` : '/survey';
+                router.push(nextPath);
+              }}
+            >
+              <Edit3 size={20} />
+              イベントのアンケートへ進む
+            </button>
+          </div>
+        )}
+
         {settings.hasExhibits && (
           <button
-            className="btn-primary"
+            className={settings.hasEventSurvey ? "btn-secondary" : "btn-primary"}
             onClick={() => {
               const nextPath = eventId ? `/events/${eventId}/survey/exhibits` : '/survey/creators';
               router.push(nextPath);
@@ -110,24 +126,9 @@ export default function ViewerMenu() {
             {settings.exhibitTerm}の感想へ進む
           </button>
         )}
-
-        {settings.hasEventSurvey && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <button
-              className={settings.hasExhibits ? "btn-secondary" : "btn-primary"}
-              onClick={() => {
-                const nextPath = eventId ? `/events/${eventId}/survey` : '/survey';
-                router.push(nextPath);
-              }}
-            >
-              <Edit3 size={20} />
-              イベントのアンケートへ進む
-            </button>
-            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-light)', textAlign: 'center', margin: 0 }}>
+        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-light)', textAlign: 'center', margin: 0 }}>
               ✏️ すでに回答済みの方は、こちらから内容を変更できます
-            </p>
-          </div>
-        )}
+        </p>
 
         {!settings.hasEventSurvey && !settings.hasExhibits && (
           <p style={{ textAlign: 'center', color: 'var(--color-text-light)' }}>
@@ -158,7 +159,9 @@ export default function ViewerMenu() {
               const timeString = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
               
               let title = '';
-              const eventName = f.data?.event?.title || 'イベント';
+              const eventName = f.type === 'event' 
+                ? (f.data?.event?.title || 'イベント') 
+                : (f.data?.exhibit?.event?.title || 'イベント');
               
               if (f.type === 'event') {
                 title = `${eventName}への全体アンケート`;
@@ -185,7 +188,7 @@ export default function ViewerMenu() {
                     <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px' }}>{title}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--color-text-light)' }}>
                       <Clock size={12} /> {timeString} に送信
-                      {f.type === 'exhibit' && f.isRead && (
+                      {f.isRead && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--color-primary)', fontWeight: 600, marginLeft: '8px' }}>
                           <CheckCheck size={14} /> 読まれました
                         </span>

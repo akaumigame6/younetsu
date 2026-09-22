@@ -24,7 +24,7 @@ export default function ExhibitFeedbackView() {
           setExhibit(data);
           const parsedFeedbacks = (data.feedbackRecords || []).map((fb: any) => ({
             ...fb,
-            q1: typeof fb.q1 === 'string' ? JSON.parse(fb.q1) : fb.q1
+            q1: fb.q1
           }));
           setFeedbacks(parsedFeedbacks);
           setLoading(false);
@@ -150,14 +150,9 @@ export default function ExhibitFeedbackView() {
         </div>
       )}
 
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
-        gap: '16px',
-        alignItems: 'start'
-      }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {feedbacks.map((fb) => (
-          <div key={fb.id} className="card" style={{ height: '100%' }}>
+          <div key={fb.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',

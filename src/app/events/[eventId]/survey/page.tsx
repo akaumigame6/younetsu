@@ -3,7 +3,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { PenTool, Calendar, MapPin, Clock, AlertTriangle } from 'lucide-react';
 import { useEventSettings } from '../../../../context/EventSettingsContext';
 import { useState, useEffect } from 'react';
-import { getExistingEventFeedback } from '../../../../actions/survey';
+import { getExistingEventFeedback, saveEventFeedback } from '../../../../actions/survey';
 import { useViewerFeedback } from '../../../../context/ViewerFeedbackContext';
 
 /**
@@ -20,15 +20,22 @@ export default function EventSurvey() {
   
   const customQuestionsList = (() => {
     try {
-      return JSON.parse(settings.customQuestions || '[]');
+      const q = settings.customQuestions;
+      if (Array.isArray(q)) return q;
+      if (typeof q === 'string') {
+        const parsed = JSON.parse(q);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return [];
     } catch {
       return [];
     }
   })();
 
   const [isMounted, setIsMounted] = useState(false);
-  const { viewerId } = useViewerFeedback();
-  
+  const { userId } = useViewerFeedback();
+  const [existingFeedbackId, setExistingFeedbackId] = useState<string | null>(null);
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -36,17 +43,18 @@ export default function EventSurvey() {
   // 既存データ（下書きや回答済み）の復元
   useEffect(() => {
     const fetchExisting = async () => {
-      if (!eventId || !viewerId) return;
-      const { data } = await getExistingEventFeedback(viewerId, eventId);
+      if (!eventId || !userId) return;
+      const { data } = await getExistingEventFeedback(userId, eventId);
       if (data) {
+        setExistingFeedbackId(data.id);
         let parsedCustomAnswers: Record<string, any> = {};
         if (data.customAnswers) {
           try {
-            parsedCustomAnswers = JSON.parse(data.customAnswers);
+            parsedCustomAnswers = data.customAnswers;
           } catch {}
         } else if (data.referralSources) {
           try {
-            const parsedRefs = JSON.parse(data.referralSources);
+            const parsedRefs = data.referralSources;
             if (Array.isArray(parsedRefs) && parsedRefs.length > 0) {
               parsedCustomAnswers['q_referral'] = parsedRefs;
             }
@@ -58,7 +66,7 @@ export default function EventSurvey() {
       }
     };
     fetchExisting();
-  }, [eventId, viewerId]);
+  }, [eventId, userId]);
 
   // Hydration mismatch を防ぐため、初回レンダリングが完了するまでスケルトンを表示するか、
   // 最低限の静的HTMLだけを返す
@@ -148,9 +156,10 @@ export default function EventSurvey() {
         <br />
       </p>
 
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {customQuestionsList.map((q: any) => (
+      {settings.hasEventSurvey && (
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {customQuestionsList.map((q: any) => (
             <div key={q.id}>
               <p style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '8px' }}>Q. {q.label}</p>
               {q.type === 'radio' && (
@@ -199,14 +208,21 @@ export default function EventSurvey() {
           ))}
         </div>
       </div>
+      )}
+
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
         <button
           className="btn-primary"
-          onClick={() => {
-            const dataStr = encodeURIComponent(JSON.stringify({ customAnswers }));
-            const nextPath = eventId ? `/events/${eventId}/survey/wizard?context=event&initialData=${dataStr}` : `/survey/wizard?context=event&initialData=${dataStr}`;
-            router.push(nextPath);
+          onClick={async () => {
+            if (settings.hasEventSurvey) {
+              const dataStr = encodeURIComponent(JSON.stringify({ customAnswers }));
+              const nextPath = eventId ? `/events/${eventId}/survey/wizard?context=event&initialData=${dataStr}` : `/survey/wizard?context=event&initialData=${dataStr}`;
+              router.push(nextPath);
+            } else {
+              // イベント全体の感想がOFFの場合、カスタム回答もないため保存せずすぐに鑑賞者ダッシュボードへ遷移
+              router.push(`/events/${eventId}/viewer`);
+            }
           }}
         >
           <PenTool size={18} />

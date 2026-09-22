@@ -14,14 +14,14 @@ interface EventSettings {
   hasExhibits: boolean;
   exhibitTerm: string;
   hasEventSurvey: boolean;
-  customQuestions?: string;
+  customQuestions?: any[];
   eventQ2Placeholder?: string;
   eventQ3Placeholder?: string;
   creatorQ2Placeholder?: string;
   creatorQ3Placeholder?: string;
   freeEventPlaceholder?: string;
   freeCreatorPlaceholder?: string;
-  referralSources?: string;
+  referralSources?: string[];
   useReadStatus: boolean;
 }
 
@@ -40,14 +40,14 @@ const defaultSettings: EventSettings = {
   hasExhibits: true,
   exhibitTerm: '作家',
   hasEventSurvey: true,
-  customQuestions: '[]',
+  customQuestions: [],
   eventQ2Placeholder: '例：〇〇の展示で、入り口の雰囲気から',
   eventQ3Placeholder: '例：色使いがとても綺麗だったから',
   creatorQ2Placeholder: '例：作品の〇〇の表現から',
   creatorQ3Placeholder: '例：不思議な魅力があったから',
   freeEventPlaceholder: '例：素晴らしい体験でした。特に〇〇が印象に残りました。',
   freeCreatorPlaceholder: '例：素晴らしい体験でした。特に〇〇が印象に残りました。',
-  referralSources: 'X(旧Twitter),Instagram,ポスター/チラシ,知人の紹介,その他',
+  referralSources: ['X(旧Twitter)', 'Instagram', 'ポスター/チラシ', '知人の紹介', 'その他'],
   useReadStatus: true,
 };
 
@@ -89,14 +89,14 @@ export const EventSettingsProvider: React.FC<{ children: ReactNode }> = ({ child
             hasExhibits: typedData.hasExhibits ?? true,
             exhibitTerm: typedData.exhibitTerm || '作家',
             hasEventSurvey: typedData.hasEventSurvey ?? true,
-            customQuestions: typedData.customQuestions || '[]',
+            customQuestions: typedData.customQuestions || [],
             eventQ2Placeholder: typedData.eventQ2Placeholder || '',
             eventQ3Placeholder: typedData.eventQ3Placeholder || '',
             creatorQ2Placeholder: typedData.creatorQ2Placeholder || '',
             creatorQ3Placeholder: typedData.creatorQ3Placeholder || '',
             freeEventPlaceholder: typedData.freeEventPlaceholder || '',
             freeCreatorPlaceholder: typedData.freeCreatorPlaceholder || '',
-            referralSources: typedData.referralSources || '',
+            referralSources: typedData.referralSources || [],
             useReadStatus: typedData.useReadStatus ?? true,
           });
         }

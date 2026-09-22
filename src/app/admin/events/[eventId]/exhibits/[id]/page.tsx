@@ -1,6 +1,6 @@
 "use client";
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, CheckCircle, MessageCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { Exhibit, ExhibitFeedback } from '../../../../../../types';
 
@@ -14,7 +14,8 @@ export default function AdminExhibitFeedbackDetail() {
   const [feedbacks, setFeedbacks] = useState<ExhibitFeedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllEmotions, setShowAllEmotions] = useState(false);
-  const [useReadStatus, setUseReadStatus] = useState(false);
+  const [useReadStatus, setUseReadStatus] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'unread'>('all');
 
   useEffect(() => {
     if (!id) return;
@@ -35,7 +36,7 @@ export default function AdminExhibitFeedbackDetail() {
 
       const parsedFeedbacks = Array.isArray(fData) ? fData.map((f: any) => ({
         ...f,
-        q1: typeof f.q1 === 'string' ? JSON.parse(f.q1) : f.q1
+        q1: f.q1
       })).filter((f: ExhibitFeedback) => f.exhibitId === id) : [];
       setFeedbacks(parsedFeedbacks);
       setLoading(false);
@@ -137,60 +138,97 @@ export default function AdminExhibitFeedbackDetail() {
         </div>
       )}
 
+
+
+      {useReadStatus && feedbacks.length > 0 && (
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          <button
+            className={filterStatus === 'all' ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => setFilterStatus('all')}
+            style={{ flex: 1, padding: '8px', fontSize: '0.9rem' }}
+          >
+            すべて
+          </button>
+          <button
+            className={filterStatus === 'unread' ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => setFilterStatus('unread')}
+            style={{ flex: 1, padding: '8px', fontSize: '0.9rem' }}
+          >
+            未確認のみ
+          </button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {feedbacks.length === 0 ? (
           <p style={{ color: 'var(--color-text-light)', textAlign: 'center', marginTop: '32px' }}>
             まだ感想は届いていません。
           </p>
         ) : (
-          feedbacks.map((f) => (
-            <div key={f.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)' }}>
-                  {new Date(f.createdAt).toLocaleString()}
+          feedbacks.filter(f => filterStatus === 'all' || !f.isRead).map((f) => (
+            <div key={f.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-light)', fontSize: '0.85rem' }}>
+                  <MessageCircle size={16} />
+                  <span>{new Date(f.createdAt).toLocaleDateString('ja-JP')}</span>
                 </div>
-                {useReadStatus && (
-                  <button 
-                    onClick={() => toggleReadStatus(f.id, f.isRead)}
-                    style={{ 
-                      marginLeft: 'auto',
-                      display: 'flex', alignItems: 'center', gap: '4px',
-                      padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
-                      border: f.isRead ? '1px solid #4CAF50' : '1px solid var(--color-border)',
-                      backgroundColor: f.isRead ? '#e8f5e9' : 'transparent',
-                      color: f.isRead ? '#4CAF50' : 'var(--color-text-light)'
-                    }}
-                  >
-                    <Check size={14} /> {f.isRead ? '確認済み' : '未確認'}
-                  </button>
+                {useReadStatus && f.isRead && (
+                  <span style={{
+                    display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', padding: '4px 10px',
+                    borderRadius: '12px', backgroundColor: '#f0f0f0', color: 'var(--color-text-light)',
+                    border: '1px solid var(--color-border)', fontWeight: 600,
+                  }}>
+                    <CheckCircle size={14} /> 既読
+                  </span>
                 )}
               </div>
               
               {f.content && (
                 <div>
-                  <p style={{ whiteSpace: 'pre-wrap', margin: 0, fontSize: '0.95rem' }}>{f.content}</p>
+                  <p style={{ whiteSpace: 'pre-wrap', margin: 0, fontSize: '0.95rem', lineHeight: '1.6' }}>{f.content}</p>
                 </div>
               )}
               {f.inputType === 'questions' && Array.isArray(f.q1) && f.q1.length > 0 && (
-                <details style={{ marginTop: '8px', cursor: 'pointer' }}>
+                <details style={{ marginTop: '12px', cursor: 'pointer' }}>
                   <summary style={{ fontSize: '0.85rem', color: 'var(--color-primary)', fontWeight: 600, userSelect: 'none', padding: '4px 0', outline: 'none' }}>
                     詳細を見る
                   </summary>
-                  <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '8px', borderLeft: '2px solid var(--color-border)' }}>
-                    <div style={{ fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '10px', borderLeft: '3px solid var(--color-border)', marginTop: '8px' }}>
+                    <div style={{ fontSize: '0.9rem' }}>
                       <span style={{ color: 'var(--color-text-light)', fontSize: '0.8rem', marginRight: '8px' }}>感情:</span>
                       <span style={{ fontWeight: 600 }}>{f.q1.join('、')}</span>
                     </div>
-                    <div style={{ fontSize: '0.85rem' }}>
-                      <span style={{ color: 'var(--color-text-light)', fontSize: '0.8rem', marginRight: '8px' }}>場所:</span>
-                      <span>{f.q2}</span>
-                    </div>
-                    <div style={{ fontSize: '0.85rem' }}>
-                      <span style={{ color: 'var(--color-text-light)', fontSize: '0.8rem', marginRight: '8px' }}>理由:</span>
-                      <span>{f.q3}</span>
-                    </div>
+                    {f.q2 && (
+                      <div style={{ fontSize: '0.9rem' }}>
+                        <span style={{ color: 'var(--color-text-light)', fontSize: '0.8rem', marginRight: '8px' }}>場所:</span>
+                        <span>{f.q2}</span>
+                      </div>
+                    )}
+                    {f.q3 && (
+                      <div style={{ fontSize: '0.9rem' }}>
+                        <span style={{ color: 'var(--color-text-light)', fontSize: '0.8rem', marginRight: '8px' }}>理由:</span>
+                        <span>{f.q3}</span>
+                      </div>
+                    )}
                   </div>
                 </details>
+              )}
+
+              {useReadStatus && !f.isRead && (
+                <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
+                  <div style={{ borderTop: '1px solid var(--color-border)', margin: '0 -20px 16px', padding: '0 20px' }} />
+                  <button
+                    onClick={() => toggleReadStatus(f.id, f.isRead)}
+                    style={{
+                      display: 'flex', width: '100%', justifyContent: 'center', alignItems: 'center', gap: '8px',
+                      padding: '12px 20px', borderRadius: 'var(--radius-full)', border: '1px solid var(--color-border)',
+                      backgroundColor: 'white', fontSize: '0.95rem', fontWeight: 600, color: 'var(--color-text)',
+                      cursor: 'pointer', transition: 'all 0.2s',
+                    }}
+                  >
+                    <CheckCircle size={18} /> 確認済みにする
+                  </button>
+                </div>
               )}
             </div>
           ))

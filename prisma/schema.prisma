@@ -10,8 +10,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 
@@ -43,16 +43,13 @@ model ExhibitFeedback {
   exhibitId String
   exhibit   Exhibit @relation(fields: [exhibitId], references: [id], onDelete: Cascade)
 
-  viewerId  String?
+  userId    String?  // userId: 感想を投稿した鑑賞者のID
 
   inputType        String   // "free" または "questions"
   content          String
-  q1               String   // SQLite非対応のためString(JSON)に変更
+  q1               Json     // 選択された回答など
   q2               String?
   q3               String?
-
-  eventFeedbackId String?
-  eventFeedback   EventFeedback? @relation(fields: [eventFeedbackId], references: [id], onDelete: SetNull)
 
   reaction  String?
   isRead    Boolean  @default(false)
@@ -68,18 +65,16 @@ model EventFeedback {
   eventId String 
   event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  viewerId  String?
+  userId    String?  // userId: 感想を投稿した鑑賞者のID
 
   inputType        String // "free" または "questions"
   content          String
-  q1               String // SQLite非対応のためString(JSON)に変更
+  q1               Json   // 選択された回答など
   q2               String?
   q3               String?
-  referralSources  String // SQLite非対応のためString(JSON)に変更
-  customAnswers    String? // JSON文字列としてカスタム質問への回答を保存
+  referralSources  Json   // 何でイベントを知ったか
+  customAnswers    Json?  // カスタム質問への回答
   isRead           Boolean  @default(false) // 既読フラグ
-
-  exhibitFeedbacks ExhibitFeedback[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -104,19 +99,18 @@ model Event {
   freeEventPlaceholder   String?
   freeCreatorPlaceholder String?
 
-  // 「何でイベントを知ったか」の選択肢 (カンマ区切りなどで保存)
-  referralSources        String?
+  // 「何でイベントを知ったか」の選択肢 (配列で保存)
+  referralSources        Json?
 
   // 主催者ID (SupabaseのユーザーIDなど)
-  adminId                String
+  userId                 String // userId: イベント主催者(管理者)のID
 
   // イベントの設定
-  eventType              String   @default("group") // "solo" または "group" 等
   hasExhibits            Boolean  @default(true)
   exhibitTerm            String   @default("作家")
   
   hasEventSurvey         Boolean  @default(true) // イベント全体感想(大枠)を集めるか
-  customQuestions        String?  // JSON文字列としてカスタム質問を保存
+  customQuestions        Json?    // カスタム質問を保存
   
   useReadStatus          Boolean  @default(true) // 既読機能を使用するかどうか
 

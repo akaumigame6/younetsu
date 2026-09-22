@@ -70,13 +70,12 @@ export type FeedbackData = FeedbackFreeData | FeedbackQuestionsData;
 export interface ExhibitFeedback {
   id: string;
   exhibitId: string;
-  viewerId?: string | null;
+  userId?: string | null;
   inputType: string;
   content: string;
   q1?: string[];
   q2?: string | null;
   q3?: string | null;
-  eventFeedbackId?: string | null;
   reaction?: string | null;
   isRead: boolean;
   createdAt: string;
@@ -89,7 +88,7 @@ export interface ExhibitFeedback {
 export interface EventFeedback {
   id: string;
   eventId: string;
-  viewerId?: string | null;
+  userId?: string | null;
   inputType: string;
   content: string;
   q1?: string[];

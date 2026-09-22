@@ -38,13 +38,13 @@ export default function AdminDashboard() {
       
       const parsedFData = (Array.isArray(fData) ? fData : []).map(f => ({
         ...f,
-        q1: typeof f.q1 === 'string' ? JSON.parse(f.q1) : f.q1
+        q1: f.q1
       }));
       setExhibitFeedbacks(parsedFData);
       
       const parsedSData = (Array.isArray(sData) ? sData : []).map(s => ({
         ...s,
-        q1: typeof s.q1 === 'string' ? JSON.parse(s.q1) : s.q1
+        q1: s.q1
       }));
       setEventFeedbacks(parsedSData);
       
