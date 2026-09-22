@@ -45,7 +45,7 @@ export default function TabExhibits({ exhibits, hasExhibits = true, eventId: pro
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <p style={{ fontSize: '0.9rem', color: 'var(--color-text-light)' }}>
-        各小枠（作家等）にURLをコピーして共有してください。対象者はそのURLから自分宛ての感想を閲覧できます。<br/>
+        各個別枠の担当者にURLをコピーして共有してください。対象者はそのURLから自分宛ての感想を閲覧できます。<br/>
         イベント全体の感想URLは、主催者やスタッフで確認用にご利用ください。
       </p>
 
@@ -118,7 +118,7 @@ export default function TabExhibits({ exhibits, hasExhibits = true, eventId: pro
         </div>
       </div>
 
-      {/* 小枠ごとの感想URL */}
+      {/* 個別枠ごとの感想URL */}
       {hasExhibits && exhibits.map((exhibit) => {
         const shareUrl = `${origin}/events/${eventId}/exhibits/${exhibit.shareToken}`;
         const isCopied = copiedToken === exhibit.id;
@@ -167,7 +167,7 @@ export default function TabExhibits({ exhibits, hasExhibits = true, eventId: pro
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>会場設置用QRコード</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', marginBottom: '8px' }}>
-                  ブースに設置して、直接この小枠への感想入力へ飛ばすためのQRコードです。
+                  ブースに設置して、直接この個別枠への感想入力へ飛ばすためのQRコードです。
                 </div>
                 <button
                   onClick={() => downloadQRCode(`qr-${exhibit.id}`, exhibit.name)}

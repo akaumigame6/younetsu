@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       {
         id: 'test-pattern-a',
         title: 'パターンA【フル機能】',
-        description: 'イベント感想ON / 小枠ON / カスタム質問あり',
+        description: 'イベント感想ON / 個別枠ON / カスタム質問あり',
         startDate: new Date(),
         endDate: new Date(),
         userId,
@@ -34,8 +34,8 @@ export async function POST(request: Request) {
       },
       {
         id: 'test-pattern-b',
-        title: 'パターンB【小枠のみ】',
-        description: 'イベント感想OFF / 小枠ON / (カスタム質問なし)',
+        title: 'パターンB【個別枠のみ】',
+        description: 'イベント感想OFF / 個別枠ON / (カスタム質問なし)',
         startDate: new Date(),
         endDate: new Date(),
         userId,
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       {
         id: 'test-pattern-c',
         title: 'パターンC【イベントのみ】',
-        description: 'イベント感想ON / 小枠OFF / カスタム質問あり',
+        description: 'イベント感想ON / 個別枠OFF / カスタム質問あり',
         startDate: new Date(),
         endDate: new Date(),
         userId,
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       {
         id: 'test-pattern-d',
         title: 'パターンD【最小構成】',
-        description: 'イベント感想ON / 小枠ON / カスタム質問なし',
+        description: 'イベント感想ON / 個別枠ON / カスタム質問なし',
         startDate: new Date(),
         endDate: new Date(),
         userId,
@@ -77,20 +77,20 @@ export async function POST(request: Request) {
         data,
       });
 
-      // 小枠(exhibits)の作成（パターンC以外は作成）
+      // 個別枠(exhibits)の作成（パターンC以外は作成）
       if (data.hasExhibits) {
         await prisma.exhibit.createMany({
           data: [
             {
               eventId: data.id,
-              name: '小枠1 (Test)',
-              description: 'テスト用小枠1',
+              name: '個別枠1 (Test)',
+              description: 'テスト用個別枠1',
               shareToken: `${data.id}-token-1`,
             },
             {
               eventId: data.id,
-              name: '小枠2 (Test)',
-              description: 'テスト用小枠2',
+              name: '個別枠2 (Test)',
+              description: 'テスト用個別枠2',
               shareToken: `${data.id}-token-2`,
             }
           ]

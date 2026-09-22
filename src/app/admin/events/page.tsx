@@ -57,7 +57,7 @@ export default function AdminEventsList() {
     if (!userId || !newEventTitle || !newEventStartDate || !newEventEndDate) return;
 
     if (!hasEventSurvey && !hasExhibits) {
-      alert('イベントの感想（大枠）か個別枠の感想（小枠）のどちらかはONにしてください。');
+      alert('イベント全体の感想か個別枠の感想のどちらかはONにしてください。');
       return;
     }
 

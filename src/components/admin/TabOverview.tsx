@@ -47,7 +47,7 @@ export default function TabOverview({
         csvContent += `${date},${typeStr},${content},${q1},${q2},${q3},${referralStr},${customAnswersStr}\n`;
       });
     } else {
-      csvContent += '日時,小枠名,入力タイプ,内容,感情,場所,理由,既読\n';
+      csvContent += '日時,個別枠名,入力タイプ,内容,感情,場所,理由,既読\n';
       exhibitFeedbacks.forEach(f => {
         const date = new Date(f.createdAt).toLocaleString();
         const exhibitName = exhibits.find(e => e.id === f.exhibitId)?.name || '不明';
@@ -112,7 +112,7 @@ export default function TabOverview({
         )}
       </div>
 
-      {/* 小枠別 受信感想数 */}
+      {/* 個別枠別 受信感想数 */}
       {hasExhibits && (
         <div>
           <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '8px' }}>個別枠別 受信感想数（詳細確認）</h2>

@@ -144,7 +144,7 @@ export default function TabEventSettings() {
               checked={localSettings.hasEventSurvey} 
               onChange={(e) => setLocalSettings({...localSettings, hasEventSurvey: e.target.checked})}
             />
-            イベント全体（大枠）の感想を集める
+            イベント全体の感想を集める
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
             <input 
@@ -152,7 +152,7 @@ export default function TabEventSettings() {
               checked={localSettings.hasExhibits} 
               onChange={(e) => setLocalSettings({...localSettings, hasExhibits: e.target.checked})}
             />
-            個別枠（{localSettings.exhibitTerm}など小枠）の感想を集める
+            個別枠（{localSettings.exhibitTerm}など）の感想を集める
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
             <input 

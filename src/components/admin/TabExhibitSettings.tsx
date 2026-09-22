@@ -72,7 +72,7 @@ export default function TabExhibitSettings({ exhibits, setExhibits }: { exhibits
     const randomToken = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
     const newExhibit: Exhibit = {
       id: newId,
-      name: '新規小枠（作家）',
+      name: '新規個別枠',
       description: 'プロフィールを入力してください',
       iconUrl: '',
       shareToken: `token-${randomToken}`,
@@ -85,7 +85,7 @@ export default function TabExhibitSettings({ exhibits, setExhibits }: { exhibits
   };
 
   const handleDeleteExhibit = async (id: string) => {
-    if (window.confirm('この小枠（作家）を削除しますか？\n（関連する感想データも今後表示されなくなります）')) {
+    if (window.confirm('この個別枠を削除しますか？\n（関連する感想データも今後表示されなくなります）')) {
       if (!id.startsWith('tmp-')) {
         await fetch(`/api/admin/exhibits/${id}`, { method: 'DELETE' });
       }

@@ -68,7 +68,7 @@ export default function AdminExhibitFeedbackDetail() {
   if (!exhibit) {
     return (
       <div className="content-area fade-in">
-        <p>小枠（作家等）が見つかりません。</p>
+        <p>個別枠が見つかりません。</p>
         <button className="btn-ghost" onClick={() => router.push(`/admin/events/${eventId}/dashboard`)}>戻る</button>
       </div>
     );
