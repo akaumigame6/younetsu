@@ -60,3 +60,9 @@ dev.db-journal
 # docs
 docs/*
 .agents/*
+
+# Supabase Local
+supabase/.branches/
+supabase/.temp/
+supabase/storage/*
+!supabase/storage/.gitkeep
