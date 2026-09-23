@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     const { data: exhibitFeedbacks, error } = await query;
     if (error) throw error;
 
-    // Map Exhibit object to exhibit property as prisma did
+    // フロントエンドが期待する `exhibit` プロパティの形式にマッピングする
     const mapped = exhibitFeedbacks.map((f: any) => ({
       ...f,
       exhibit: f.Exhibit || f.exhibit
