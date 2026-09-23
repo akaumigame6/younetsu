@@ -1,4 +1,4 @@
-﻿import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
@@ -58,19 +58,18 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    !user &&
-    request.nextUrl.pathname.startsWith('/admin')
-  ) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    if (!user || user.is_anonymous) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
   }
 
   // 繧ゅ＠繝ｭ繧ｰ繧､繝ｳ貂医∩繝ｦ繝ｼ繧ｶ繝ｼ縺・/login 縺ｫ繧｢繧ｯ繧ｻ繧ｹ縺励◆繧・/admin/events 縺ｸ繝ｪ繝繧､繝ｬ繧ｯ繝・
   if (
-    user &&
-    request.nextUrl.pathname.startsWith('/login')
+    user && !user.is_anonymous &&
+    (request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/register'))
   ) {
     const url = request.nextUrl.clone()
     url.pathname = '/admin/events'

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '../../utils/supabase/server'
+import { headers } from 'next/headers'
 
 export async function login(formData: FormData) {
   const supabase = await createClient()
@@ -26,21 +27,17 @@ export async function signup(formData: FormData) {
   const supabase = await createClient()
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  
+  const headersList = await headers()
+  const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-  })
+  const { error } = await supabase.auth.updateUser({ email, password })
 
   if (error) {
-    redirect('/register?error=Could not authenticate user')
+    console.error('Signup/Update Error:', error.message)
+    redirect(`/register?error=${encodeURIComponent(error.message)}`)
   }
 
-  // NOTE: Supabase側で「Confirm email」が有効な場合、サインアップしてもすぐにはログインできず、
-  // 確認メールをクリックするまで認証されません。
-  // テスト用ですぐにログインさせたい場合は、Supabaseダッシュボードから「Confirm email」の設定をオフにしてください。
-
-  revalidatePath('/admin/events')
   redirect('/admin/events')
 }
 

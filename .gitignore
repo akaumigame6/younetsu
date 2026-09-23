@@ -55,7 +55,7 @@ dev.db-journal
 
 # local env files
 .env
-.env*.local
+.env*.local*
 .env*.cloud
 
 # docs

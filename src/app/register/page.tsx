@@ -1,9 +1,32 @@
 import { signup } from '../login/actions'
 
-export default function RegisterPage() {
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ message?: string, error?: string }>
+}) {
+  const resolvedSearchParams = await searchParams;
+  const error = resolvedSearchParams.error;
+
+  let displayError = error;
+  if (error) {
+    if (error.includes('Password should be at least 6 characters')) {
+      displayError = 'パスワードは6文字以上で入力してください。';
+    } else if (error.toLowerCase().includes('rate limit exceeded') || error.includes('429')) {
+      displayError = 'メール送信回数の上限に達しました。しばらく時間をおいてから再度お試しください。';
+    }
+  }
+
   return (
     <div style={{ padding: '2rem', maxWidth: '400px', margin: '0 auto' }}>
       <h1>新規登録</h1>
+      
+      {displayError && (
+        <div style={{ background: '#f8d7da', color: '#721c24', padding: '1rem', borderRadius: '4px', marginBottom: '1rem' }}>
+          {displayError}
+        </div>
+      )}
+
       <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <label htmlFor="email" style={{ fontWeight: 600 }}>メールアドレス</label>
@@ -23,8 +46,10 @@ export default function RegisterPage() {
             name="password" 
             type="password" 
             required 
+            minLength={6}
             style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }} 
           />
+          <small style={{ color: '#666', fontSize: '0.8rem' }}>※6文字以上の半角英数字</small>
         </div>
         
         <button 

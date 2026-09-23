@@ -28,14 +28,8 @@ export const ViewerFeedbackProvider: React.FC<{ children: ReactNode }> = ({ chil
         } else {
           const { data, error } = await supabase.auth.signInAnonymously();
           if (error) {
-            console.warn('Anonymous sign-in failed (likely disabled in Supabase). Falling back to local UUID.', error);
-            // フォールバック: LocalStorage で独自のIDを管理する
-            let localUid = localStorage.getItem('fallback_viewer_id');
-            if (!localUid) {
-              localUid = crypto.randomUUID();
-              localStorage.setItem('fallback_viewer_id', localUid);
-            }
-            setUserId(localUid);
+            console.error('Anonymous sign-in failed (must be enabled in Supabase).', error);
+            setUserId(null);
           } else if (data?.user) {
             setUserId(data.user.id);
           }

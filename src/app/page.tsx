@@ -30,7 +30,7 @@ export default function Home() {
         {/* 鑑賞者: 一連のフローへ (テスト用イベントへ) */}
         <button className="btn-primary" onClick={handleDemoClick}>
           <User size={20} />
-          鑑賞者として参加する (デモ)
+          鑑賞者として参加する
         </button>
 
         {/* 主催者: ログインへ */}
