@@ -170,7 +170,7 @@ export default function ExhibitFeedbackView() {
                 <MessageCircle size={16} />
                 <span>{parseUTCDate(fb.createdAt).toLocaleDateString('ja-JP')}</span>
               </div>
-              {exhibit.event?.useReadStatus && fb.isRead && (
+              {(exhibit as any).event?.useReadStatus && fb.isRead && (
                 <span style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -220,7 +220,7 @@ export default function ExhibitFeedbackView() {
               </details>
             )}
 
-            {exhibit.event?.useReadStatus && !fb.isRead && (
+            {(exhibit as any).event?.useReadStatus && !fb.isRead && (
               <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
                 <div style={{ borderTop: '1px solid var(--color-border)', margin: '0 -20px 16px', padding: '0 20px' }} />
                 <button

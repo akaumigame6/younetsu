@@ -34,8 +34,8 @@ export default function TabOverview({
         let refs: string[] = [];
         if (s.customAnswers) {
           try {
-            const parsed = s.customAnswers;
-            if (parsed['q_referral']) {
+            const parsed = s.customAnswers as unknown as Record<string, any>;
+            if (parsed && parsed['q_referral']) {
               refs = Array.isArray(parsed['q_referral']) ? parsed['q_referral'] : [parsed['q_referral']];
             }
           } catch (e) {}

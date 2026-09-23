@@ -97,6 +97,7 @@ export const mockEventFeedbacks: EventFeedback[] = [
     content: 'とても素晴らしい展示会でした。次回も楽しみにしています。',
     createdAt: new Date(Date.now() - 86400000).toISOString(),
     updatedAt: new Date(Date.now() - 86400000).toISOString(),
+    isRead: false,
   },
   {
     id: 'survey-2',
@@ -108,6 +109,7 @@ export const mockEventFeedbacks: EventFeedback[] = [
     q3: '統一感があり没入できたため',
     createdAt: new Date(Date.now() - 40000000).toISOString(),
     updatedAt: new Date(Date.now() - 40000000).toISOString(),
+    isRead: false,
   },
 ];
 

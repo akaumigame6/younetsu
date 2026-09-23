@@ -22,8 +22,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ shar
     // Map objects to expected properties
     const mapped = {
       ...exhibit,
-      event: exhibit.Event || exhibit.event,
-      feedbackRecords: exhibit.ExhibitFeedback || exhibit.feedbackRecords || []
+      event: (exhibit as any).Event || (exhibit as any).event,
+      feedbackRecords: (exhibit as any).ExhibitFeedback || (exhibit as any).feedbackRecords || []
     };
 
     return NextResponse.json(mapped);

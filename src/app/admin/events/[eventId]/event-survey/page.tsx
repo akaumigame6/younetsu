@@ -92,8 +92,8 @@ export default function AdminEventFeedbackDetail() {
     let refs: string[] = [];
     if (s.customAnswers) {
       try {
-        const parsedAnswers = s.customAnswers;
-        if (parsedAnswers['q_referral']) {
+        const parsedAnswers = s.customAnswers as unknown as Record<string, any>;
+        if (parsedAnswers && parsedAnswers['q_referral']) {
           refs = Array.isArray(parsedAnswers['q_referral']) ? parsedAnswers['q_referral'] : [parsedAnswers['q_referral']];
         }
       } catch (e) {}
@@ -232,8 +232,8 @@ export default function AdminEventFeedbackDetail() {
                     let refs: string[] = [];
                     if (s.customAnswers) {
                       try {
-                        const parsed = s.customAnswers;
-                        if (parsed['q_referral']) {
+                        const parsed = s.customAnswers as unknown as Record<string, any>;
+                        if (parsed && parsed['q_referral']) {
                           refs = Array.isArray(parsed['q_referral']) ? parsed['q_referral'] : [parsed['q_referral']];
                         }
                       } catch (e) {}
