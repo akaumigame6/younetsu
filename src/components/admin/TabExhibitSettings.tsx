@@ -157,6 +157,7 @@ export default function TabExhibitSettings({ exhibits, setExhibits }: { exhibits
                   onChange={(e) => updateExhibit(exhibit.id, 'description', e.target.value)}
                 />
               </div>
+              {/* 画像アップロード機能は一時的に無効化
               <div className="input-group" style={{ marginBottom: 0 }}>
                 <label className="input-label">アイコン画像</label>
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -189,7 +190,8 @@ export default function TabExhibitSettings({ exhibits, setExhibits }: { exhibits
                     />
                   </label>
                 </div>
-              </div>
+              </div> 
+              */}
               
               <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end' }}>
                 <button 

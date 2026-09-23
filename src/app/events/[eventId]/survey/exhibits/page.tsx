@@ -90,6 +90,7 @@ export default function ExhibitSelect() {
             }}
             onClick={() => handleSelectExhibit(exhibit.id)}
           >
+            {/* アイコン枠自体を完全に無効化
             <div style={{
               width: '48px',
               height: '48px',
@@ -101,12 +102,9 @@ export default function ExhibitSelect() {
               flexShrink: 0,
               overflow: 'hidden',
             }}>
-              {exhibit.iconUrl ? (
-                <img src={exhibit.iconUrl} alt={exhibit.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <User size={24} color="var(--color-text-light)" />
-              )}
+              <User size={24} color="var(--color-text-light)" />
             </div>
+            */}
             <div>
               <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>{exhibit.name}</div>
               <div style={{ fontSize: '0.85rem', color: 'var(--color-text-light)' }}>{exhibit.description}</div>
