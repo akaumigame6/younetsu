@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Calendar, Settings, X, HelpCircle, LogOut } from 'lucide-react';
+import { Plus, Calendar, Settings, X, HelpCircle, LogOut, Trash2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
-import { getAdminEvents, createEvent } from '../../../actions/event';
+import { getAdminEvents, createEvent, deleteEvent } from '../../../actions/event';
 
 export default function AdminEventsList() {
   const router = useRouter();
@@ -95,6 +95,22 @@ export default function AdminEventsList() {
     }
   };
 
+  const handleDeleteEvent = async (e: React.MouseEvent, eventId: string, eventTitle: string) => {
+    e.stopPropagation();
+    if (!confirm(`イベント「${eventTitle}」を削除してもよろしいですか？\n※このイベントに関連するすべての展示と感想データが完全に削除され、復元できません。`)) {
+      return;
+    }
+    
+    setLoading(true);
+    const { success, error } = await deleteEvent(eventId);
+    if (success) {
+      setEvents(prev => prev.filter(ev => ev.id !== eventId));
+    } else {
+      alert('イベントの削除に失敗しました: ' + (error || '不明なエラー'));
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="content-area fade-in">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
@@ -138,9 +154,17 @@ export default function AdminEventsList() {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', margin: 0 }}>{ev.title}</h2>
-                <div style={{ padding: '6px', backgroundColor: 'var(--color-surface)', borderRadius: '50%' }}>
-                  <Settings size={18} color="var(--color-text-light)" />
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', margin: 0, paddingRight: '12px' }}>{ev.title}</h2>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ padding: '6px', backgroundColor: 'var(--color-surface)', borderRadius: '50%', cursor: 'pointer' }}>
+                    <Settings size={18} color="var(--color-text-light)" />
+                  </div>
+                  <div 
+                    style={{ padding: '6px', backgroundColor: 'var(--color-surface)', borderRadius: '50%', cursor: 'pointer' }}
+                    onClick={(e) => handleDeleteEvent(e, ev.id, ev.title)}
+                  >
+                    <Trash2 size={18} color="#ef4444" />
+                  </div>
                 </div>
               </div>
               

@@ -176,3 +176,24 @@ export async function createEvent(data: {
     return { data: null, error: error?.message || 'Failed to create event' };
   }
 }
+
+export async function deleteEvent(eventId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) throw new Error('Unauthorized');
+
+    const { error } = await supabase
+      .from('Event')
+      .delete()
+      .eq('id', eventId)
+      .eq('userId', user.id);
+
+    if (error) throw error;
+    
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error('Failed to delete event:', error);
+    return { success: false, error: error?.message || 'Failed to delete event' };
+  }
+}

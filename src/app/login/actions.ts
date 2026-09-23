@@ -27,15 +27,24 @@ export async function signup(formData: FormData) {
   const supabase = await createClient()
   const email = formData.get('email') as string
   const password = formData.get('password') as string
-  
-  const headersList = await headers()
-  const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  // 現在のセッション（匿名ユーザー等）が存在するか確認
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const { error } = await supabase.auth.updateUser({ email, password })
+  let authError;
 
-  if (error) {
-    console.error('Signup/Update Error:', error.message)
-    redirect(`/register?error=${encodeURIComponent(error.message)}`)
+  if (user) {
+    // 既存のセッションがある場合は「昇格（UUID維持）」として updateUser を使う
+    const { error } = await supabase.auth.updateUser({ email, password })
+    authError = error;
+  } else {
+    // キャッシュクリア等によりセッションが全くない場合は、通常の新規登録として signUp を使う
+    const { error } = await supabase.auth.signUp({ email, password })
+    authError = error;
+  }
+
+  if (authError) {
+    console.error('Signup Error:', authError.message)
+    redirect(`/register?error=${encodeURIComponent(authError.message)}`)
   }
 
   // 匿名から正規ユーザーへの昇格後、古いJWTトークン(is_anonymous: true)が残るのを防ぐため、
