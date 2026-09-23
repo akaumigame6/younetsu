@@ -2,8 +2,10 @@
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Edit3, CheckCheck } from 'lucide-react';
 import { useViewerFeedback } from '../../../../../../context/ViewerFeedbackContext';
+import { useEventSettings } from '../../../../../../context/EventSettingsContext';
 import { useState, useEffect } from 'react';
 import type { Exhibit } from '../../../../../../types';
+import { parseUTCDate } from '../../../../../../utils/date';
 
 import { getExhibitFeedbackById, getEventFeedbackById } from '../../../../../../actions/survey';
 
@@ -14,6 +16,19 @@ export default function MyFeedbackDetail() {
   const [feedback, setFeedback] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [exhibitName, setExhibitName] = useState<string>('読み込み中...');
+  const { settings } = useEventSettings();
+
+  // 表示用のカスタム質問リストを取得
+  let customQuestionsList: any[] = [];
+  try {
+    const q = settings?.customQuestions;
+    if (Array.isArray(q)) {
+      customQuestionsList = q;
+    } else if (typeof q === 'string') {
+      const parsed = JSON.parse(q);
+      customQuestionsList = Array.isArray(parsed) ? parsed : [];
+    }
+  } catch {}
 
   useEffect(() => {
     const fetchFeedback = async () => {
@@ -96,7 +111,7 @@ export default function MyFeedbackDetail() {
       <h1 className="title" style={{ fontSize: '1.2rem', marginBottom: '8px' }}>{title}</h1>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div style={{ fontSize: '0.85rem', color: 'var(--color-text-light)' }}>
-          送信日時: {new Date(feedback.timestamp).toLocaleString()}
+          送信日時: {parseUTCDate(feedback.timestamp).toLocaleString()}
         </div>
         {feedback.type === 'exhibit' && feedback.data.isRead && (
           <div style={{
@@ -129,6 +144,23 @@ export default function MyFeedbackDetail() {
             <div>
               <div style={{ fontSize: '0.85rem', color: 'var(--color-text-light)' }}>Q. その理由は</div>
               <div style={{ fontWeight: 500 }}>{feedback.data.q3 || '（未回答）'}</div>
+            </div>
+          </div>
+        )}
+
+        {feedback.type === 'event' && feedback.data.customAnswers && Object.keys(feedback.data.customAnswers).length > 0 && (
+          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--color-border)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {customQuestionsList.filter((q: any) => feedback.data.customAnswers[q.id]).map((q: any) => (
+                <div key={q.id}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--color-text-light)' }}>Q. {q.label}</div>
+                  <div style={{ fontWeight: 500 }}>
+                    {Array.isArray(feedback.data.customAnswers[q.id]) 
+                      ? (feedback.data.customAnswers[q.id] as string[]).join('、') 
+                      : feedback.data.customAnswers[q.id]}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

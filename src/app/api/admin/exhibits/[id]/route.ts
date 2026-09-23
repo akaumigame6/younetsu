@@ -1,44 +1,57 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../../lib/prisma';
-import { verifyAdmin } from '../../../../../lib/auth';
+import { createClient } from '../../../../../utils/supabase/server';
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  if (!(await verifyAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export const revalidate = 0;
+
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
-    const body = await request.json();
-    const { name, description, iconUrl, shareToken } = body;
+    const updateData = await request.json();
 
-    const exhibit = await prisma.exhibit.update({
-      where: { id },
-      data: { name, description, iconUrl, shareToken }
-    });
+    const { data: updatedExhibit, error } = await supabase
+      .from('Exhibit')
+      .update({ ...updateData, updatedAt: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
 
-    return NextResponse.json(exhibit);
+    if (error) throw error;
+
+    return NextResponse.json(updatedExhibit);
   } catch (error) {
-    console.error('Failed to update creator:', error);
-    return NextResponse.json({ error: 'Failed to update creator' }, { status: 500 });
+    console.error('Failed to update exhibit:', error);
+    return NextResponse.json({ error: 'Failed to update exhibit' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  if (!(await verifyAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
-    
-    await prisma.exhibit.delete({
-      where: { id }
-    });
 
-    return new NextResponse(null, { status: 204 });
+    const { error } = await supabase
+      .from('Exhibit')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to delete creator:', error);
-    return NextResponse.json({ error: 'Failed to delete creator' }, { status: 500 });
+    console.error('Failed to delete exhibit:', error);
+    return NextResponse.json({ error: 'Failed to delete exhibit' }, { status: 500 });
   }
 }

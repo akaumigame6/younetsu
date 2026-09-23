@@ -2,6 +2,7 @@
 import { useRouter, useParams } from 'next/navigation';
 import { ChevronRight, Download } from 'lucide-react';
 import type { Exhibit, ExhibitFeedback, EventFeedback } from '../../types';
+import { parseUTCDate } from '../../utils/date';
 
 export default function TabOverview({ 
   eventId, exhibits, exhibitFeedbacks, eventFeedbacks, hasExhibits = true, hasEventSurvey = true 
@@ -22,7 +23,7 @@ export default function TabOverview({
     if (type === 'eventFeedbacks') {
       csvContent += '日時,入力タイプ,内容,感情,場所,理由,認知経路,カスタム回答(JSON)\n';
       eventFeedbacks.forEach(s => {
-        const date = new Date(s.createdAt).toLocaleString();
+        const date = parseUTCDate(s.createdAt).toLocaleString();
         const typeStr = s.inputType || '';
         const content = `"${(s.content || '').replace(/"/g, '""')}"`;
         const q1 = `"${(Array.isArray(s.q1) ? s.q1.join('、') : '').replace(/"/g, '""')}"`;
@@ -42,14 +43,17 @@ export default function TabOverview({
           refs = s.referralSources;
         }
         const referralStr = `"${refs.join('、').replace(/"/g, '""')}"`;
-        const customAnswersStr = `"${(s.customAnswers || '').replace(/"/g, '""')}"`;
+        const rawCustomAnswers = typeof s.customAnswers === 'object' && s.customAnswers !== null
+          ? JSON.stringify(s.customAnswers)
+          : String(s.customAnswers || '');
+        const customAnswersStr = `"${rawCustomAnswers.replace(/"/g, '""')}"`;
 
         csvContent += `${date},${typeStr},${content},${q1},${q2},${q3},${referralStr},${customAnswersStr}\n`;
       });
     } else {
       csvContent += '日時,個別枠名,入力タイプ,内容,感情,場所,理由,既読\n';
       exhibitFeedbacks.forEach(f => {
-        const date = new Date(f.createdAt).toLocaleString();
+        const date = parseUTCDate(f.createdAt).toLocaleString();
         const exhibitName = exhibits.find(e => e.id === f.exhibitId)?.name || '不明';
         const typeStr = f.inputType || '';
         const content = `"${(f.content || '').replace(/"/g, '""')}"`;
@@ -161,7 +165,7 @@ export default function TabOverview({
               return (
                 <div key={s.id} className="card" style={{ padding: '12px' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', marginBottom: '4px' }}>
-                    {new Date(s.createdAt).toLocaleString()}
+                    {parseUTCDate(s.createdAt).toLocaleString()}
                   </div>
                   {surveyData.content && (
                     <div>

@@ -1,19 +1,28 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
-import { verifyAdmin } from '../../../../lib/auth';
+import { createClient } from '../../../../utils/supabase/server';
 
-export const revalidate = 0; // ◀ サーバサイドのキャッシュを無効化する設定
+export const revalidate = 0;
 
 export async function GET(request: Request) {
-  if (!(await verifyAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get('eventId');
     
-    const exhibits = await prisma.exhibit.findMany({
-      where: eventId ? { eventId } : undefined,
-      orderBy: { createdAt: 'desc' },
-    });
+    let query = supabase.from('Exhibit').select('*').order('createdAt', { ascending: false });
+    if (eventId) {
+      query = query.eq('eventId', eventId);
+    }
+
+    const { data: exhibits, error } = await query;
+    if (error) throw error;
+    
     return NextResponse.json(exhibits);
   } catch (error) {
     console.error('Failed to fetch admin exhibits:', error);
@@ -22,7 +31,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!(await verifyAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { eventId, name, description, iconUrl, shareToken } = body;
@@ -31,15 +46,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'eventId is required' }, { status: 400 });
     }
 
-    const exhibit = await prisma.exhibit.create({
-      data: {
+    const { data: exhibit, error } = await supabase
+      .from('Exhibit')
+      .insert({
+        id: crypto.randomUUID(),
         eventId,
         name,
         description,
         iconUrl,
         shareToken,
-      }
-    });
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(exhibit, { status: 201 });
   } catch (error) {

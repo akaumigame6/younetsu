@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import type { Exhibit, ExhibitFeedback } from '../../../../../../types';
 
 import { emotionColors } from '../../../../../../utils/emotionColors';
+import { parseUTCDate } from '../../../../../../utils/date';
 
 export default function AdminExhibitFeedbackDetail() {
   const { id, eventId } = useParams<{ id: string, eventId: string }>();
@@ -170,7 +171,7 @@ export default function AdminExhibitFeedbackDetail() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-light)', fontSize: '0.85rem' }}>
                   <MessageCircle size={16} />
-                  <span>{new Date(f.createdAt).toLocaleDateString('ja-JP')}</span>
+                  <span>{parseUTCDate(f.createdAt).toLocaleDateString('ja-JP')}</span>
                 </div>
                 {useReadStatus && f.isRead && (
                   <span style={{

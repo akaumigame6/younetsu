@@ -1,30 +1,34 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { createAdminClient } from '../../../../utils/supabase/server';
 
-export const revalidate = 0; // ◀ サーバサイドのキャッシュを無効化する設定
-
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ shareToken: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ shareToken: string }> }) {
+  // Use admin client to bypass RLS since this endpoint authenticates via shareToken
+  const supabase = await createAdminClient();
   try {
     const { shareToken } = await params;
-    const exhibit = await prisma.exhibit.findUnique({
-      where: { shareToken },
-      include: {
-        feedbackRecords: {
-          orderBy: { createdAt: 'desc' }
-        }
-      }
-    });
+
+    const { data: exhibit, error } = await supabase
+      .from('Exhibit')
+      .select('id, eventId, name, description, iconUrl, shareToken, createdAt, Event(id, title, useReadStatus), ExhibitFeedback(id, inputType, content, q1, q2, q3, isRead, createdAt)')
+      .eq('shareToken', shareToken)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
     
     if (!exhibit) {
-      return NextResponse.json({ error: 'Exhibit not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     
-    return NextResponse.json(exhibit);
+    // Map objects to expected properties
+    const mapped = {
+      ...exhibit,
+      event: exhibit.Event || exhibit.event,
+      feedbackRecords: exhibit.ExhibitFeedback || exhibit.feedbackRecords || []
+    };
+
+    return NextResponse.json(mapped);
   } catch (error) {
-    console.error('Failed to fetch exhibit:', error);
-    return NextResponse.json({ error: 'Failed to fetch exhibit' }, { status: 500 });
+    console.error('Failed to get exhibit by shareToken:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

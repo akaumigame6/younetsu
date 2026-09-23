@@ -83,6 +83,9 @@ export default function TabEventSettings() {
         referralSources: localSettings.referralSources,
         exhibitTerm: localSettings.exhibitTerm,
         useReadStatus: localSettings.useReadStatus,
+        hasEventSurvey: localSettings.hasEventSurvey,
+        hasExhibits: localSettings.hasExhibits,
+        customQuestions: localSettings.customQuestions,
       };
       
       try {
@@ -93,10 +96,14 @@ export default function TabEventSettings() {
         });
         
         if (!response.ok) {
-          throw new Error('Failed to save settings');
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.error || 'Failed to save settings';
+          alert('保存に失敗しました: ' + errorMessage);
+          throw new Error(errorMessage);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to save settings:', error);
+        alert('保存に失敗しました: ' + error.message);
       }
     } else {
       console.warn('eventId is missing. Cannot save to DB.');

@@ -6,6 +6,7 @@ import type { EventFeedback } from '../../../../../types';
 import { getEvent } from '../../../../../actions/event';
 
 import { emotionColors } from '../../../../../utils/emotionColors';
+import { parseUTCDate } from '../../../../../utils/date';
 
 export default function AdminEventFeedbackDetail() {
   const router = useRouter();
@@ -224,7 +225,7 @@ export default function AdminEventFeedbackDetail() {
             <div key={s.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--color-text-light)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <MessageCircle size={16} /> {new Date(s.createdAt).toLocaleDateString('ja-JP')}
+                  <MessageCircle size={16} /> {parseUTCDate(s.createdAt).toLocaleDateString('ja-JP')}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {(() => {

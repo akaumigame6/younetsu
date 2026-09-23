@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { MessageCircle, Check, CheckCircle } from 'lucide-react';
 import type { Exhibit, ExhibitFeedback } from '../../../../../types';
 import { emotionColors } from '../../../../../utils/emotionColors';
+import { parseUTCDate } from '../../../../../utils/date';
 
 export default function ExhibitFeedbackView() {
   const { token, eventId } = useParams<{ token: string, eventId: string }>();
@@ -167,9 +168,9 @@ export default function ExhibitFeedbackView() {
                 fontSize: '0.85rem',
               }}>
                 <MessageCircle size={16} />
-                <span>{new Date(fb.createdAt).toLocaleDateString('ja-JP')}</span>
+                <span>{parseUTCDate(fb.createdAt).toLocaleDateString('ja-JP')}</span>
               </div>
-              {fb.isRead && (
+              {exhibit.event?.useReadStatus && fb.isRead && (
                 <span style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -219,7 +220,7 @@ export default function ExhibitFeedbackView() {
               </details>
             )}
 
-            {!fb.isRead && (
+            {exhibit.event?.useReadStatus && !fb.isRead && (
               <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
                 <div style={{ borderTop: '1px solid var(--color-border)', margin: '0 -20px 16px', padding: '0 20px' }} />
                 <button

@@ -1,18 +1,28 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
-import { verifyAdmin } from '../../../../lib/auth';
+import { createClient } from '../../../../utils/supabase/server';
 
-export const revalidate = 0; // ◀ サーバサイドのキャッシュを無効化する設定
+export const revalidate = 0;
+
 export async function GET(request: Request) {
-  if (!(await verifyAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get('eventId');
 
-    const eventFeedbacks = await prisma.eventFeedback.findMany({
-      where: eventId ? { eventId } : undefined,
-      orderBy: { createdAt: 'desc' },
-    });
+    let query = supabase.from('EventFeedback').select('*').order('createdAt', { ascending: false });
+    if (eventId) {
+      query = query.eq('eventId', eventId);
+    }
+
+    const { data: eventFeedbacks, error } = await query;
+    if (error) throw error;
+
     return NextResponse.json(eventFeedbacks);
   } catch (error) {
     console.error('Failed to fetch admin event feedbacks:', error);
@@ -21,15 +31,26 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  if (!(await verifyAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { id, isRead } = await request.json();
     if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
 
-    const updated = await prisma.eventFeedback.update({
-      where: { id },
-      data: { isRead }
-    });
+    const { data: updated, error } = await supabase
+      .from('EventFeedback')
+      .update({ isRead, updatedAt: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
     return NextResponse.json(updated);
   } catch (error) {
     console.error('Failed to update event feedback:', error);

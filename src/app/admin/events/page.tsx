@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Calendar, Settings, X, HelpCircle } from 'lucide-react';
+import { Plus, Calendar, Settings, X, HelpCircle, LogOut } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { getAdminEvents, createEvent } from '../../../actions/event';
 
@@ -90,7 +90,8 @@ export default function AdminEventsList() {
       setExhibitTerm('作家');
       setEvents(prev => [data, ...prev]);
     } else {
-      alert('イベントの作成に失敗しました。');
+      alert('イベントの作成に失敗しました: ' + (error || '不明なエラー'));
+      console.error('Create event error details:', error);
     }
   };
 
@@ -101,10 +102,16 @@ export default function AdminEventsList() {
           <h1 className="title" style={{ margin: 0 }}>マイイベント一覧</h1>
           <p className="subtitle" style={{ marginTop: '8px', marginBottom: 0 }}>管理しているイベントを選択してください</p>
         </div>
-        <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ width: 'auto', padding: '12px 24px' }}>
-          <Plus size={20} />
-          <span className="hide-on-mobile">新規イベント</span>
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn-outline" onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: 'auto', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <LogOut size={18} />
+            <span className="hide-on-mobile">ログアウト</span>
+          </button>
+          <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ width: 'auto', padding: '12px 24px' }}>
+            <Plus size={20} />
+            <span className="hide-on-mobile">新規イベント</span>
+          </button>
+        </div>
       </div>
 
       {loading ? (

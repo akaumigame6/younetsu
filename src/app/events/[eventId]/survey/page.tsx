@@ -212,22 +212,46 @@ export default function EventSurvey() {
 
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-        <button
-          className="btn-primary"
-          onClick={async () => {
-            if (settings.hasEventSurvey) {
-              const dataStr = encodeURIComponent(JSON.stringify({ customAnswers }));
-              const nextPath = eventId ? `/events/${eventId}/survey/wizard?context=event&initialData=${dataStr}` : `/survey/wizard?context=event&initialData=${dataStr}`;
-              router.push(nextPath);
-            } else {
-              // イベント全体の感想がOFFの場合、カスタム回答もないため保存せずすぐに鑑賞者ダッシュボードへ遷移
-              router.push(`/events/${eventId}/viewer`);
-            }
-          }}
-        >
-          <PenTool size={18} />
-          次に進む
-        </button>
+        {(() => {
+          // 未回答チェック (すべて回答必須)
+          const isAllAnswered = settings.hasEventSurvey && customQuestionsList.length > 0
+            ? customQuestionsList.every((q: any) => {
+                const answer = customAnswers[q.id];
+                if (q.type === 'checkbox') {
+                  return Array.isArray(answer) && answer.length > 0;
+                }
+                return answer && answer.toString().trim() !== '';
+              })
+            : true;
+
+          return (
+            <button
+              className="btn-primary"
+              disabled={!isAllAnswered}
+              style={{ 
+                opacity: isAllAnswered ? 1 : 0.5, 
+                cursor: isAllAnswered ? 'pointer' : 'not-allowed' 
+              }}
+              onClick={async () => {
+                if (settings.hasEventSurvey) {
+                  if (!isAllAnswered) {
+                    alert('すべての質問に回答してください。');
+                    return;
+                  }
+                  const dataStr = encodeURIComponent(JSON.stringify({ customAnswers }));
+                  const nextPath = eventId ? `/events/${eventId}/survey/wizard?context=event&initialData=${dataStr}` : `/survey/wizard?context=event&initialData=${dataStr}`;
+                  router.push(nextPath);
+                } else {
+                  // イベント全体の感想がOFFの場合、カスタム回答もないため保存せずすぐに鑑賞者ダッシュボードへ遷移
+                  router.push(`/events/${eventId}/viewer`);
+                }
+              }}
+            >
+              <PenTool size={18} />
+              次に進む
+            </button>
+          );
+        })()}
       </div>
     </div>
   );

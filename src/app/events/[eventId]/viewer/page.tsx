@@ -6,6 +6,7 @@ import { useEventSettings } from '../../../../context/EventSettingsContext';
 import { useViewerFeedback } from '../../../../context/ViewerFeedbackContext';
 import type { Exhibit } from '../../../../types';
 import { getEventFeedbacksByViewer, getExhibitFeedbacksByViewer } from '../../../../actions/survey';
+import { parseUTCDate } from '../../../../utils/date';
 
 // DBから取得したデータを統一フォーマットで扱うための型
 interface NormalizedFeedback {
@@ -60,7 +61,7 @@ export default function ViewerMenu() {
               type: 'event',
               isRead: s.isRead,
               data: s,
-              timestamp: s.createdAt.toISOString()
+              timestamp: typeof s.createdAt === 'string' ? s.createdAt : new Date(s.createdAt).toISOString()
             });
           });
         }
@@ -73,7 +74,7 @@ export default function ViewerMenu() {
               exhibitId: f.exhibitId,
               isRead: f.isRead,
               data: f,
-              timestamp: f.createdAt.toISOString()
+              timestamp: typeof f.createdAt === 'string' ? f.createdAt : new Date(f.createdAt).toISOString()
             });
           });
         }
@@ -155,7 +156,7 @@ export default function ViewerMenu() {
           <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '12px' }}>送った感想</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {feedbacks.map(f => {
-              const date = new Date(f.timestamp);
+              const date = parseUTCDate(f.timestamp);
               const timeString = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
               
               let title = '';

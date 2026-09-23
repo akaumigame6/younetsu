@@ -113,7 +113,13 @@ function SurveyWizardContent() {
             // 下位互換: 古いreferralSourcesがあれば q_referral にマッピング
             parsedCustomAnswers['q_referral'] = existingData.referralSources;
           }
-          setCustomAnswers(parsedCustomAnswers);
+          // 既存データの customAnswers と、前の画面から渡された initialData.customAnswers をマージ
+          // (前画面での入力内容を優先する)
+          const finalCustomAnswers = {
+            ...parsedCustomAnswers,
+            ...(initialData?.customAnswers || {})
+          };
+          setCustomAnswers(finalCustomAnswers);
 
           setInitialData({
             type: existingData.inputType,
@@ -229,9 +235,9 @@ function SurveyWizardContent() {
         }
         router.push(eventId ? `/events/${eventId}/survey/complete` : '/survey/complete');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to submit:', error);
-      alert('送信に失敗しました。');
+      alert('送信に失敗しました: ' + (error || '不明なエラー'));
     } finally {
       setIsSubmitting(false);
     }
@@ -874,7 +880,13 @@ function SurveyWizardContent() {
     // 表示用のカスタム質問リストを再度取得
     let customQuestionsList: any[] = [];
     try {
-      customQuestionsList = JSON.parse(settings.customQuestions || '[]');
+      const q = settings.customQuestions;
+      if (Array.isArray(q)) {
+        customQuestionsList = q;
+      } else if (typeof q === 'string') {
+        const parsed = JSON.parse(q);
+        customQuestionsList = Array.isArray(parsed) ? parsed : [];
+      }
     } catch {}
 
     return (

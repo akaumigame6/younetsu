@@ -1,32 +1,26 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { createClient } from '../../../../utils/supabase/server';
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient();
   try {
     const { id } = await params;
-    const body = await request.json();
 
-    // セキュリティ: 更新可能フィールドを isRead / reaction のみに制限
-    // content, q1, q2, q3 等の改ざんを防止する
-    const updateData: Record<string, unknown> = {};
-    if (body.isRead !== undefined) updateData.isRead = body.isRead;
-    if (body.reaction !== undefined) updateData.reaction = body.reaction;
+    const { data: feedback, error } = await supabase
+      .from('EventFeedback') // Or ExhibitFeedback, if both share the same endpoint this needs adjustment
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+    if (error && error.code !== 'PGRST116') throw error;
+
+    if (!feedback) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-
-    const feedback = await prisma.exhibitFeedback.update({
-      where: { id },
-      data: updateData,
-    });
 
     return NextResponse.json(feedback);
   } catch (error) {
-    console.error('Failed to update feedback:', error);
-    return NextResponse.json({ error: 'Failed to update feedback' }, { status: 500 });
+    console.error('Failed to get feedback by ID:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
