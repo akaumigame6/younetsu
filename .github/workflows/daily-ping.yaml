@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Send HTTP GET request
         run: |
-          curl -X GET "https://younetsu-midoriichi.vercel.app/" -v --fail || exit 1
+          curl -X GET "https://younetsu.vercel.app/events/9857109e-c9eb-4680-b345-1329a6fa86d9/viewer" -v --fail || exit 1
 
       - name: Log request time
         run: |
