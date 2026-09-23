@@ -38,6 +38,17 @@ export async function signup(formData: FormData) {
     redirect(`/register?error=${encodeURIComponent(error.message)}`)
   }
 
+  // 匿名から正規ユーザーへの昇格後、古いJWTトークン(is_anonymous: true)が残るのを防ぐため、
+  // 明示的に再ログイン処理を行って最新のセッション(is_anonymous: false)をCookieに焼き直す
+  const { error: loginError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  if (loginError) {
+    console.error('Auto-login Error after signup:', loginError.message)
+  }
+
   redirect('/admin/events')
 }
 
