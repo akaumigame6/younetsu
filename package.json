@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "copy .env.local .env && next dev",
+    "dev:local": "copy .env.local .env && next dev",
+    "dev:cloud": "copy .env.cloud .env && next dev",
     "build": "next build",
     "vercel-build": "prisma generate && next build",
     "start": "next start",
