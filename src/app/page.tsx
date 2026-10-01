@@ -34,10 +34,10 @@ export default function Home() {
         </button>
 
         {/* 主催者: ログインへ */}
-        {/* <button className="btn-secondary" onClick={() => router.push('/admin')}>
+        <button className="btn-secondary" onClick={() => router.push('/admin')}>
           <Settings size={20} />
           YouNetsu 管理画面へ
-        </button> */}
+        </button>
       </div>
 
       <div style={{
