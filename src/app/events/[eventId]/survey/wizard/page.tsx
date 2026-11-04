@@ -7,7 +7,6 @@ import { useEventSettings } from '../../../../../context/EventSettingsContext';
 import type { FeedbackData, SurveyData, Exhibit } from '../../../../../types';
 import { supabase } from '../../../../../lib/supabase';
 import { getExistingEventFeedback, getExistingExhibitFeedback, saveEventFeedback, saveExhibitFeedback } from '../../../../../actions/survey';
-import { getEvent } from '../../../../../actions/event';
 import { plutchikEmotions, subEmotionsMap } from '../../../../../utils/emotionColors';
 
 function SurveyWizardContent() {
@@ -244,12 +243,86 @@ function SurveyWizardContent() {
   };
 
   // ==== Progress Calculation ====
-  const maxSteps = inputType === 'free' ? 3 : 5; // free: Select->Input->Confirm, questions: Select->Input->GenSelect->Edit->Confirm
-  let currentProgressStep = step;
-  if (inputType === 'free' && step >= 5) {
-    currentProgressStep = 3; 
+  const maxSteps = 3;
+  let currentProgressStep = 1;
+  if (step === 1 || step === 0) {
+    currentProgressStep = 1;
+  } else if (step === 2 || step === 3 || step === 4) {
+    currentProgressStep = 2;
+  } else if (step === 5) {
+    currentProgressStep = 3;
   }
-  const progressPercent = (currentProgressStep / maxSteps) * 100;
+
+  let subStep = 0;
+  if (inputType === 'questions' && (step === 2 || step === 3 || step === 4)) {
+    if (step === 2) {
+      subStep = questionStep;
+    } else if (step === 3) {
+      subStep = 4;
+    } else if (step === 4) {
+      subStep = 5;
+    }
+  }
+
+  // ==== Navigation Handlers ====
+  const handleMainStepClick = (targetIndex: number) => {
+    if (targetIndex === 0) {
+      setStep(1);
+    } else if (targetIndex === 1) {
+      if (!inputType) {
+        alert('作成方法を選択してください。');
+        return;
+      }
+      if (inputType === 'questions') {
+        setStep(2);
+        setQuestionStep(1);
+      } else {
+        setStep(2);
+      }
+    } else if (targetIndex === 2) {
+      if (!inputType) {
+        alert('作成方法を選択してください。');
+        return;
+      }
+      if (inputType === 'questions') {
+        if (selectedEmotions.length === 0 && !freeEmotion) {
+          alert('感情の選択は必須です。');
+          return;
+        }
+        if (!content.trim()) {
+          alert('文章が生成されていません。先に生成方法（AI/定型文）を選択して文章を作成してください。');
+          return;
+        }
+      }
+      if (inputType === 'free' && !content.trim()) {
+        alert('感想を入力してください。');
+        return;
+      }
+      setStep(5);
+    }
+  };
+
+  const handleSubStepClick = (targetIndex: number) => {
+    if (targetIndex > 0 && selectedEmotions.length === 0 && !freeEmotion) {
+      alert('感情の選択は必須です。先に感情を選択してください。');
+      return;
+    }
+    if (targetIndex === 4 && !content.trim()) {
+      alert('文章が生成されていません。先に生成方法を選択して文章を作成してください。');
+      return;
+    }
+    if (targetIndex === 0) {
+      setStep(2); setQuestionStep(1);
+    } else if (targetIndex === 1) {
+      setStep(2); setQuestionStep(2);
+    } else if (targetIndex === 2) {
+      setStep(2); setQuestionStep(3);
+    } else if (targetIndex === 3) {
+      setStep(3);
+    } else if (targetIndex === 4) {
+      setStep(4);
+    }
+  };
 
   // ==========================================
   // Render Steps
@@ -347,7 +420,7 @@ function SurveyWizardContent() {
         <button 
           className="btn-outline" 
           style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}
-          onClick={() => { setInputType('questions'); handleNextStep(); }}
+          onClick={() => { setInputType('questions'); setQuestionStep(1); handleNextStep(); }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.2rem', fontWeight: 600 }}>
             <MessageSquare className="icon-primary" />
@@ -428,20 +501,10 @@ function SurveyWizardContent() {
 
     return (
       <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {/* Question Progress */}
-        <div style={{ marginBottom: '8px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--color-text-light)', marginBottom: '8px' }}>
-            <span>Question {questionStep} / 3</span>
-          </div>
-          <div className="progress-bar-container" style={{ height: '4px' }}>
-            <div className="progress-bar-fill" style={{ width: `${(questionStep / 3) * 100}%`, transition: 'width 0.3s ease' }} />
-          </div>
-        </div>
-
         {questionStep === 1 && (
           <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <h1 className="title" style={{ alignSelf: 'flex-start' }}>どんな感情になりましたか？</h1>
-            <p className="subtitle" style={{ alignSelf: 'flex-start' }}>当てはまるものを最大3つまで選んでください。</p>
+            <h1 className="title" style={{ alignSelf: 'flex-start', marginBottom: '4px' }}>どんな感情になりましたか？</h1>
+            <p className="subtitle" style={{ alignSelf: 'flex-start', marginBottom: '8px' }}>当てはまるものを最大3つまで選んでください。</p>
             
             {/* Selected Emotions Display */}
             <div style={{ 
@@ -450,7 +513,7 @@ function SurveyWizardContent() {
               flexWrap: 'wrap', 
               gap: '8px', 
               marginBottom: '16px', 
-              marginTop: '16px',
+              marginTop: '0px',
               minHeight: '40px',
               padding: '12px',
               backgroundColor: '#f8f8f8',
@@ -970,14 +1033,57 @@ function SurveyWizardContent() {
       </div>
 
       {/* Progress Bar */}
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        backgroundColor: 'var(--color-background,#F9F8F6)',
+        paddingTop: '8px',
+        paddingBottom: '16px',
+        marginBottom: '24px',
+        borderBottom: '1px solid var(--color-border)',
+        width: '100vw',
+        marginLeft: 'calc(-50vw + 50%)',
+        paddingLeft: 'calc(50vw - 50%)',
+        paddingRight: 'calc(50vw - 50%)'
+      }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--color-text-light)', marginBottom: '8px' }}>
           <span>Step {currentProgressStep} / {maxSteps}</span>
           <span>{isEvent ? 'イベントアンケート' : `${settings.exhibitTerm || '個別枠'}への感想`}</span>
         </div>
-        <div className="progress-bar-container">
-          <div className="progress-bar-fill" style={{ width: `${progressPercent}%`, transition: 'width 0.3s ease' }} />
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {Array.from({ length: maxSteps }).map((_, i) => (
+            <div key={i} onClick={() => handleMainStepClick(i)} style={{
+              flex: 1,
+              height: '6px',
+              borderRadius: '3px',
+              backgroundColor: i === currentProgressStep - 1 ? 'var(--color-text)' : 'var(--color-border)',
+              transition: 'background-color 0.3s ease',
+              cursor: 'pointer'
+            }} />
+          ))}
         </div>
+
+        {subStep > 0 && (
+          <div style={{ marginTop: '16px' }} className="fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--color-text-light)', marginBottom: '6px' }}>
+              <span>作成フェーズ {subStep} / 5</span>
+            </div>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} onClick={() => handleSubStepClick(i)} style={{
+                  flex: 1,
+                  height: '4px',
+                  borderRadius: '2px',
+                  backgroundColor: i === subStep - 1 ? 'var(--color-text)' : 'var(--color-border)',
+                  transition: 'background-color 0.3s ease',
+                  opacity: 0.8,
+                  cursor: 'pointer'
+                }} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Steps */}

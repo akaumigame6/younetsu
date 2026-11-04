@@ -81,22 +81,7 @@ export default function EventSurvey() {
 
   return (
     <div className="content-area fade-in" style={{ justifyContent: 'center' }}>
-      {/* イベント全体の進行プログレス */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontSize: '0.8rem',
-          color: 'var(--color-text-light)',
-          marginBottom: '8px',
-        }}>
-          <span>Step 1 / 2</span>
-          <span>イベントアンケート</span>
-        </div>
-        <div className="progress-bar-container">
-          <div className="progress-bar-fill" style={{ width: '50%' }} />
-        </div>
-      </div>
+
 
       <div style={{ textAlign: 'center', marginBottom: '24px' }}>
         <h1 className="title" style={{ marginBottom: '8px' }}>{settings.eventName}</h1>

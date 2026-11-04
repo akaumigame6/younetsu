@@ -48,22 +48,7 @@ export default function ExhibitSelect() {
 
   return (
     <div className="content-area fade-in">
-      {/* Progress */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontSize: '0.8rem',
-          color: 'var(--color-text-light)',
-          marginBottom: '8px',
-        }}>
-          <span>Step 2 / 2</span>
-          <span>{settings.exhibitTerm || '個別枠'}への感想（任意）</span>
-        </div>
-        <div className="progress-bar-container">
-          <div className="progress-bar-fill" style={{ width: '100%' }} />
-        </div>
-      </div>
+
 
       <h1 className="title">気になった{settings.exhibitTerm || '個別枠'}がありましたか？</h1>
       <p className="subtitle">
