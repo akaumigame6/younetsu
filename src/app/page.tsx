@@ -2,18 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import { User, Settings } from 'lucide-react';
-import { getLatestEventId } from '../actions/event';
 
 export default function Home() {
   const router = useRouter();
 
-  const handleDemoClick = async () => {
-    const { data: latestEventId, error } = await getLatestEventId();
-    if (error || !latestEventId) {
-      alert('イベントが見つかりません。先に管理画面からイベントを作成してください。');
-      return;
-    }
-    router.push(`/events/${latestEventId}/viewer`);
+  const handleDemoClick = () => {
+    router.push('/events/9857109e-c9eb-4680-b345-1329a6fa86d9/survey');
   };
 
   return (
