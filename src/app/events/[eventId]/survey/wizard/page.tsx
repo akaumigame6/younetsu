@@ -92,10 +92,9 @@ function SurveyWizardContent() {
     const fetchExisting = async () => {
       // ユーザーIDがまだ初期化されていない場合は処理を完了とみなさずスキップ
       if (!userId) return;
-      if (hasFetched || editId) {
-        setHasFetched(true);
-        return;
-      }
+      if (hasFetched) return;
+      setHasFetched(true);
+
       try {
         let existingData = null;
         if (isEvent && eventId) {
@@ -144,17 +143,28 @@ function SurveyWizardContent() {
             q3: existingData.q3
           });
 
+          // 既存の入力内容を state にも直接復元
+          setContent(existingData.content || '');
+          if (existingData.inputType === 'free') {
+            setInputType('free');
+          } else if (existingData.inputType === 'questions') {
+            setInputType('questions');
+            setSelectedEmotions(selected);
+            setFreeEmotion(free);
+            setQ2(existingData.q2 || '');
+            setQ3(existingData.q3 || '');
+            setInitialGeneratedContent(existingData.content || '');
+          }
+
           // 自動で飛ばさず、編集モード選択画面(Step 0)を表示する
           setStep(0);
         }
       } catch (err) {
         console.error('Failed to fetch existing record', err);
-      } finally {
-        setHasFetched(true);
       }
     };
     fetchExisting();
-  }, [userId, hasFetched, isEvent, exhibitId, editId]);
+  }, [userId, hasFetched, isEvent, exhibitId, eventId]);
 
   // ==== Step Handlers ====
   const handleNextStep = () => setStep((s) => s + 1);
@@ -164,6 +174,13 @@ function SurveyWizardContent() {
       return;
     }
     
+    if (editMode) {
+      if (step === 1 || (step === 2 && inputType === 'free') || (step === 4 && inputType === 'questions')) {
+        setStep(0);
+        return;
+      }
+    }
+
     if (step > 1) {
       if (step === 5 && inputType === 'free') {
         setStep(2);
@@ -396,25 +413,31 @@ function SurveyWizardContent() {
           className="btn-outline" 
           style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}
           onClick={() => { 
-            if (initialData?.type === 'free') {
+            const targetType = initialData?.type || inputType;
+            if (targetType === 'free') {
               setInputType('free');
-              setContent(initialData.content || '');
-              setStep(4);
-            } else if (initialData?.type === 'questions') {
+              setContent(initialData?.content || content || '');
+              setStep(2); // 自由記述フォームへ直行
+            } else if (targetType === 'questions') {
               setInputType('questions');
-              setSelectedEmotions(initialData.selectedEmotions || []);
-              setFreeEmotion(initialData.freeEmotion || '');
-              setQ2(initialData.q2 || '');
-              setQ3(initialData.q3 || '');
-              setContent(initialData.content || '');
-              if (initialData.content) {
-                setGenerationMethod('ai');
-                setStep(4);
-              } else {
-                setStep(2);
-              }
+              setSelectedEmotions(initialData?.selectedEmotions || selectedEmotions);
+              setFreeEmotion(initialData?.freeEmotion || freeEmotion);
+              setQ2(initialData?.q2 || q2);
+              setQ3(initialData?.q3 || q3);
+              const textContent = initialData?.content || content || '';
+              setContent(textContent);
+              setInitialGeneratedContent(textContent);
+              setGenerationMethod('ai');
+              setStep(4); // 質問形式の文章調整画面へ直行
             } else {
-              setStep(1); // フォールバック
+              // フォールバック: 内容があれば自由記述として Step 2 へ、なければ Step 1 へ
+              if (content || initialData?.content) {
+                setInputType('free');
+                setContent(initialData?.content || content || '');
+                setStep(2);
+              } else {
+                setStep(1);
+              }
             }
           }}
         >
@@ -1092,7 +1115,7 @@ function SurveyWizardContent() {
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
         <button className="btn-ghost" style={{ padding: '8px' }} onClick={handlePrevStep}>
           <ArrowLeft size={20} />
-          <span style={{ marginLeft: '4px' }}>{step === 1 ? 'やめる' : '戻る'}</span>
+          <span style={{ marginLeft: '4px' }}>{step <= 1 ? 'やめる' : '戻る'}</span>
         </button>
       </div>
 
