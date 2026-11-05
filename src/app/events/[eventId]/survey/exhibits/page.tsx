@@ -3,6 +3,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { SkipForward, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useEventSettings } from '../../../../../context/EventSettingsContext';
+import { recordVisitorLogStart } from '../../../../../actions/log';
 import type { Exhibit } from '../../../../../types';
 
 /**
@@ -18,6 +19,7 @@ export default function ExhibitSelect() {
 
   const [exhibits, setExhibits] = useState<Exhibit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     if (eventId) {
@@ -36,8 +38,23 @@ export default function ExhibitSelect() {
     }
   }, [eventId]);
 
-  const handleSelectExhibit = (exhibitId: string) => {
-    const nextPath = eventId ? `/events/${eventId}/survey/wizard?context=creator&exhibitId=${exhibitId}` : `/survey/wizard?context=creator&exhibitId=${exhibitId}`;
+  const handleSelectExhibit = async (exhibitId: string) => {
+    if (isNavigating) return;
+    setIsNavigating(true);
+    let sessionCount = 1;
+    if (eventId) {
+      const logRes = await recordVisitorLogStart({
+        eventId,
+        targetType: 'exhibit',
+        targetId: exhibitId,
+      });
+      if (logRes?.sessionCount) {
+        sessionCount = logRes.sessionCount;
+      }
+    }
+    const nextPath = eventId 
+      ? `/events/${eventId}/survey/wizard?context=creator&eventId=${eventId}&exhibitId=${exhibitId}&sessionCount=${sessionCount}` 
+      : `/survey/wizard?context=creator&exhibitId=${exhibitId}&sessionCount=${sessionCount}`;
     router.push(nextPath);
   };
 

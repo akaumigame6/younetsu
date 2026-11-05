@@ -121,3 +121,24 @@ model Event {
   updatedAt DateTime @updatedAt
 }
 
+// ========================
+// VisitorLog (来場者の行動・システムログ)
+// ========================
+model VisitorLog {
+  id           String    @id @default(uuid())
+  eventId      String    // イベントID (イベントごとに利用回数を分離)
+  feedbackId   String?   // 送信ID (送信完了時に紐付け)
+  userId       String    // user_id (SupabaseゲストユーザーID)
+  createdAt    DateTime  @default(now()) // 送信日時 / 記録日時
+  inputMethod  String?   // 入力方法 ("ai" | "template" | "free")
+  action       String    // 送信状態 ("start" = 開始, "submit" = 送信完了)
+  isEdited     Boolean?  // 編集の有無 (生成文から編集されたか)
+  sessionCount Int       // 利用セッションID (イベント内のユーザー利用回数: 1, 2, 3...)
+  targetType   String    // 対象種別 ("event" | "exhibit")
+  targetId     String    // eventId または exhibitId
+
+  @@index([userId, eventId, sessionCount])
+  @@index([eventId])
+  @@index([targetId])
+}
+

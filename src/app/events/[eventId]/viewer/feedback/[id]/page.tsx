@@ -8,6 +8,7 @@ import type { Exhibit } from '../../../../../../types';
 import { parseUTCDate } from '../../../../../../utils/date';
 
 import { getExhibitFeedbackById, getEventFeedbackById } from '../../../../../../actions/survey';
+import { recordVisitorLogStart } from '../../../../../../actions/log';
 
 export default function MyFeedbackDetail() {
   const { id, eventId } = useParams<{ id: string, eventId: string }>();
@@ -83,13 +84,28 @@ export default function MyFeedbackDetail() {
     );
   }
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     const dataStr = encodeURIComponent(JSON.stringify(feedback.data));
     if (feedback.type === 'event') {
-      // イベントアンケートの場合は、新規作成時と同じように入り口ページから始める
+      // イベントアンケートの場合は、入り口ページから始める
       router.push(eventId ? `/events/${eventId}/survey` : '/survey');
     } else {
-      router.push(eventId ? `/events/${eventId}/survey/wizard?context=creator&exhibitId=${feedback.exhibitId}&editMode=true&editId=${feedback.id}&initialData=${dataStr}` : `/survey/wizard?context=creator&exhibitId=${feedback.exhibitId}&editMode=true&editId=${feedback.id}&initialData=${dataStr}`);
+      let sessionCount = 1;
+      const targetEventId = eventId || feedback.data?.exhibit?.eventId || '';
+      if (targetEventId && feedback.exhibitId) {
+        const logRes = await recordVisitorLogStart({
+          eventId: targetEventId,
+          targetType: 'exhibit',
+          targetId: feedback.exhibitId,
+        });
+        if (logRes?.sessionCount) {
+          sessionCount = logRes.sessionCount;
+        }
+      }
+      const nextPath = eventId 
+        ? `/events/${eventId}/survey/wizard?context=creator&eventId=${eventId}&exhibitId=${feedback.exhibitId}&sessionCount=${sessionCount}&editMode=true&editId=${feedback.id}&initialData=${dataStr}` 
+        : `/survey/wizard?context=creator&exhibitId=${feedback.exhibitId}&sessionCount=${sessionCount}&editMode=true&editId=${feedback.id}&initialData=${dataStr}`;
+      router.push(nextPath);
     }
   };
 

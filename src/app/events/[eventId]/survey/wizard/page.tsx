@@ -7,14 +7,14 @@ import { useEventSettings } from '../../../../../context/EventSettingsContext';
 import type { FeedbackData, SurveyData, Exhibit } from '../../../../../types';
 import { supabase } from '../../../../../lib/supabase';
 import { getExistingEventFeedback, getExistingExhibitFeedback, saveEventFeedback, saveExhibitFeedback } from '../../../../../actions/survey';
+import { recordVisitorLogSubmit, recordVisitorLogStart } from '../../../../../actions/log';
 import { plutchikEmotions, subEmotionsMap } from '../../../../../utils/emotionColors';
 
 function SurveyWizardContent() {
   const params = useParams();
-  const eventId = params?.eventId as string | undefined;
-
   const router = useRouter();
   const searchParams = useSearchParams();
+  const rawEventId = (params?.eventId as string | undefined) || searchParams?.get('eventId') || undefined;
   const context = searchParams?.get('context') || 'event';
   const exhibitId = searchParams?.get('exhibitId');
   const [editMode, setEditMode] = useState(searchParams?.get('editMode') === 'true');
@@ -30,6 +30,7 @@ function SurveyWizardContent() {
   const isEvent = context === 'event';
   
   const [exhibit, setExhibit] = useState<Exhibit | null>(null);
+  const eventId = rawEventId || exhibit?.eventId;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -70,14 +71,28 @@ function SurveyWizardContent() {
   }, [initialData, customAnswers]);
   
   // Generation
+  const sessionCountParam = searchParams?.get('sessionCount');
+  const [sessionCount, setSessionCount] = useState<number>(
+    sessionCountParam ? parseInt(sessionCountParam, 10) : 1
+  );
+  const [initialGeneratedContent, setInitialGeneratedContent] = useState<string | null>(null);
   const [generationMethod, setGenerationMethod] = useState<'ai' | 'template' | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [templateVariant, setTemplateVariant] = useState(0);
 
+  // URLパラメータで editMode が渡された場合の即時反映
+  useEffect(() => {
+    if (searchParams?.get('editMode') === 'true' && searchParams?.get('editId')) {
+      setStep(0);
+    }
+  }, [searchParams]);
+
   // 既存データの自動取得
   useEffect(() => {
     const fetchExisting = async () => {
-      if (!userId || hasFetched || editId) {
+      // ユーザーIDがまだ初期化されていない場合は処理を完了とみなさずスキップ
+      if (!userId) return;
+      if (hasFetched || editId) {
         setHasFetched(true);
         return;
       }
@@ -186,6 +201,13 @@ function SurveyWizardContent() {
       } : {})
     };
 
+    const resolvedInputMethod: 'ai' | 'template' | 'free' | null = 
+      inputType === 'free' ? 'free' : (generationMethod || null);
+    const resolvedIsEdited: boolean | null = 
+      inputType === 'questions' && initialGeneratedContent !== null 
+        ? (content !== initialGeneratedContent) 
+        : null;
+
     try {
       if (isEvent) {
         if (!eventId) throw new Error('イベントIDが見つかりません');
@@ -193,18 +215,36 @@ function SurveyWizardContent() {
         const payload: any = {
           ...baseData,
           customAnswers: customAnswers,
+          eventId,
           userId,
           updatedAt: timestamp
         };
 
+        let feedbackId = editId;
         if (editId) {
           const { error } = await saveEventFeedback(payload, editId);
           if (error) throw error;
         } else {
           payload.id = crypto.randomUUID();
-          payload.eventId = eventId;
+          feedbackId = payload.id;
           const { error } = await saveEventFeedback(payload, null);
           if (error) throw error;
+        }
+
+        // 送信完了ログを記録 (上書きなし)
+        if (feedbackId && eventId) {
+          const logRes = await recordVisitorLogSubmit({
+            eventId,
+            sessionCount,
+            targetType: 'event',
+            targetId: eventId,
+            feedbackId,
+            inputMethod: resolvedInputMethod,
+            isEdited: resolvedIsEdited,
+          });
+          if (logRes?.error) {
+            console.error('Failed to record submit log for event:', logRes.error);
+          }
         }
 
         if (settings.hasExhibits) {
@@ -220,17 +260,34 @@ function SurveyWizardContent() {
             updatedAt: timestamp
           };
 
+          let feedbackId = editId;
           if (editId) {
             const { error } = await saveExhibitFeedback(payload, editId);
             if (error) throw error;
           } else {
             payload.id = crypto.randomUUID();
             payload.exhibitId = exhibitId;
+            feedbackId = payload.id;
             const { error } = await saveExhibitFeedback(payload, null);
             if (error) throw error;
           }
-          
 
+          // 送信完了ログを記録 (上書きなし)
+          const targetEventId = eventId || exhibit?.eventId;
+          if (feedbackId && targetEventId) {
+            const logRes = await recordVisitorLogSubmit({
+              eventId: targetEventId,
+              sessionCount,
+              targetType: 'exhibit',
+              targetId: exhibitId,
+              feedbackId,
+              inputMethod: resolvedInputMethod,
+              isEdited: resolvedIsEdited,
+            });
+            if (logRes?.error) {
+              console.error('Failed to record submit log for exhibit:', logRes.error);
+            }
+          }
         }
         router.push(eventId ? `/events/${eventId}/survey/complete` : '/survey/complete');
       }
@@ -374,6 +431,7 @@ function SurveyWizardContent() {
           className="btn-outline" 
           style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}
           onClick={() => { 
+            // 同一フロー内での再作成のため、start ログは再発行せずステートを初期化して Step 1 へ
             setStep(1); 
             setContent('');
             setSelectedEmotions([]);
@@ -381,6 +439,7 @@ function SurveyWizardContent() {
             setQ2('');
             setQ3('');
             setInputType(null);
+            setInitialGeneratedContent(null);
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.2rem', fontWeight: 600 }}>
@@ -867,11 +926,14 @@ function SurveyWizardContent() {
 
         const data = await res.json();
         setContent(data.content);
+        setInitialGeneratedContent(data.content);
       } catch (error) {
         console.error(error);
         alert('文章の生成中にエラーが発生しました。時間をおいて再度お試しください。');
         // フォールバックとしてテンプレートを入れる
-        setContent(`このたびは素晴らしい体験をありがとうございます。\n思わず「${q1Str}」という感情が込み上げてきました。\n\n全体を通してとても魅力的でしたが、特に${tQ2}に目を奪われました。${tQ3}という理由もあって、私の心に深く響いたのだと思います。`);
+        const fallback = `このたびは素晴らしい体験をありがとうございます。\n思わず「${q1Str}」という感情が込み上げてきました。\n\n全体を通してとても魅力的でしたが、特に${tQ2}に目を奪われました。${tQ3}という理由もあって、私の心に深く響いたのだと思います。`;
+        setContent(fallback);
+        setInitialGeneratedContent(fallback);
       } finally {
         setIsGenerating(false);
       }
@@ -883,7 +945,9 @@ function SurveyWizardContent() {
         `この作品を拝見し、言葉にはしきれない「${q1Str}」という感情が心の中に広がりました。\n全体を通してとても素敵な作品ですが、その中でも特に${tQ2}の表現がとても印象に残っています。\nなぜなら、${tQ3}からです。ずっと見ていたくなるような不思議な魅力がありました。\n素晴らしい作品を届けてくださり、本当にありがとうございます！`,
         `素敵な作品を公開してくださり、ありがとうございます。\n作品を拝見している間ずっと、${tQ2}から目が離せませんでした。とても繊細で印象的です。\n${tQ3}という理由からか、自分でも驚くほど「${q1Str}」という気持ちで胸がいっぱいになりました。\nこれからも陰ながら応援しております。また新しい作品を見られる日を楽しみにしています。`
       ];
-      setContent(templates[templateVariant % templates.length]);
+      const selectedTemplate = templates[templateVariant % templates.length];
+      setContent(selectedTemplate);
+      setInitialGeneratedContent(selectedTemplate);
     }
   };
 

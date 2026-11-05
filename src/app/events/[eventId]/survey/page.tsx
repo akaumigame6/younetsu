@@ -4,6 +4,7 @@ import { PenTool, Calendar, MapPin, Clock, AlertTriangle } from 'lucide-react';
 import { useEventSettings } from '../../../../context/EventSettingsContext';
 import { useState, useEffect } from 'react';
 import { getExistingEventFeedback, saveEventFeedback } from '../../../../actions/survey';
+import { recordVisitorLogStart } from '../../../../actions/log';
 import { useViewerFeedback } from '../../../../context/ViewerFeedbackContext';
 
 /**
@@ -33,6 +34,7 @@ export default function EventSurvey() {
   })();
 
   const [isMounted, setIsMounted] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const { userId } = useViewerFeedback();
   const [existingFeedbackId, setExistingFeedbackId] = useState<string | null>(null);
 
@@ -212,19 +214,38 @@ export default function EventSurvey() {
           return (
             <button
               className="btn-primary"
-              disabled={!isAllAnswered}
+              disabled={!isAllAnswered || isNavigating}
               style={{ 
-                opacity: isAllAnswered ? 1 : 0.5, 
-                cursor: isAllAnswered ? 'pointer' : 'not-allowed' 
+                opacity: (isAllAnswered && !isNavigating) ? 1 : 0.5, 
+                cursor: (isAllAnswered && !isNavigating) ? 'pointer' : 'not-allowed' 
               }}
               onClick={async () => {
+                if (isNavigating) return;
                 if (settings.hasEventSurvey) {
                   if (!isAllAnswered) {
                     alert('すべての質問に回答してください。');
                     return;
                   }
+                  setIsNavigating(true);
+                  // システムログ（開始）を記録
+                  let sessionCount = 1;
+                  if (eventId) {
+                    const logRes = await recordVisitorLogStart({
+                      eventId,
+                      targetType: 'event',
+                      targetId: eventId,
+                    });
+                    if (logRes?.sessionCount) {
+                      sessionCount = logRes.sessionCount;
+                    }
+                  }
                   const dataStr = encodeURIComponent(JSON.stringify({ customAnswers }));
-                  const nextPath = eventId ? `/events/${eventId}/survey/wizard?context=event&initialData=${dataStr}` : `/survey/wizard?context=event&initialData=${dataStr}`;
+                  const editParams = existingFeedbackId 
+                    ? `&editMode=true&editId=${existingFeedbackId}` 
+                    : '';
+                  const nextPath = eventId 
+                    ? `/events/${eventId}/survey/wizard?context=event&eventId=${eventId}&sessionCount=${sessionCount}${editParams}&initialData=${dataStr}` 
+                    : `/survey/wizard?context=event&sessionCount=${sessionCount}${editParams}&initialData=${dataStr}`;
                   router.push(nextPath);
                 } else {
                   // イベント全体の感想がOFFの場合、カスタム回答もないため保存せずすぐに鑑賞者ダッシュボードへ遷移
@@ -233,7 +254,7 @@ export default function EventSurvey() {
               }}
             >
               <PenTool size={18} />
-              次に進む
+              {isNavigating ? '移動中...' : '次に進む'}
             </button>
           );
         })()}
