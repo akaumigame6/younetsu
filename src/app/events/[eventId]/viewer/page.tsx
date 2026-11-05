@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Edit3, MessageSquare, Clock, ChevronRight, CheckCheck } from 'lucide-react';
+import { Edit3, MessageSquare, Clock, ChevronRight, CheckCheck, ExternalLink, HeartHandshake } from 'lucide-react';
 import { useEventSettings } from '../../../../context/EventSettingsContext';
 import { useViewerFeedback } from '../../../../context/ViewerFeedbackContext';
 import type { Exhibit } from '../../../../types';
 import { getEventFeedbacksByViewer, getExhibitFeedbacksByViewer } from '../../../../actions/survey';
 import { parseUTCDate } from '../../../../utils/date';
+import { APP_FEEDBACK_FORM_URL } from '../../../../constants/links';
 
 // DBから取得したデータを統一フォーマットで扱うための型
 interface NormalizedFeedback {
@@ -150,6 +151,52 @@ export default function ViewerMenu() {
       }}>
         感想は匿名で主催者{settings.hasExhibits ? `や${settings.exhibitTerm}` : ''}に届けられます。
       </div>
+
+      {feedbacks.length > 0 && (
+        <div
+          className="card"
+          style={{
+            marginTop: '24px',
+            padding: '16px',
+            border: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: 'var(--radius-md)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <HeartHandshake size={18} color="var(--color-primary, #e11d48)" />
+            <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
+              YouNetsuの使用感についてのお願い
+            </span>
+          </div>
+          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-light)', margin: 0, lineHeight: 1.5 }}>
+            今後のサービス向上のため、アンケートへのご協力をお願いいたします（所要時間: 3〜7分）。
+          </p>
+          <a
+            href={APP_FEEDBACK_FORM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              textDecoration: 'none',
+              fontSize: '0.85rem',
+              padding: '8px 12px',
+              width: '100%',
+              marginTop: '2px',
+            }}
+          >
+            <span>アンケートに回答する</span>
+            <ExternalLink size={14} />
+          </a>
+        </div>
+      )}
 
       {feedbacks.length > 0 && (
         <div style={{ marginTop: '32px' }}>

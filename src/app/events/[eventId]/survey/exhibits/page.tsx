@@ -59,7 +59,9 @@ export default function ExhibitSelect() {
   };
 
   const handleSkipToMenu = () => {
-    const nextPath = eventId ? `/events/${eventId}/viewer` : '/viewer';
+    const nextPath = eventId 
+      ? `/events/${eventId}/survey/complete?from=skip` 
+      : `/survey/complete?from=skip`;
     router.push(nextPath);
   };
 
