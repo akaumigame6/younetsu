@@ -10,6 +10,8 @@ export default function TabOverview({
   eventId?: string, exhibits: Exhibit[], exhibitFeedbacks: ExhibitFeedback[], eventFeedbacks: EventFeedback[], hasExhibits?: boolean, hasEventSurvey?: boolean 
 }) {
   const router = useRouter();
+  const params = useParams();
+  const currentEventId = eventId || (params?.eventId as string | undefined);
 
   const totalFeedbacks = exhibitFeedbacks.length;
   const totalSurveys = eventFeedbacks.length;
@@ -75,7 +77,7 @@ export default function TabOverview({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div data-tour="tour-overview-content" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       {/* サマリー数値 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
@@ -83,12 +85,13 @@ export default function TabOverview({
           <div 
             className="card" 
             style={{ textAlign: 'center', padding: '12px', cursor: 'pointer', transition: 'all 0.2s', border: '2px solid transparent' }}
-            onClick={() => eventId && router.push(`/admin/events/${eventId}/event-survey`)}
+            onClick={() => currentEventId && router.push(`/admin/events/${currentEventId}/event-survey`)}
             onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
             onMouseOut={(e) => e.currentTarget.style.borderColor = 'transparent'}
+            title="イベント回答一覧を開く"
           >
             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-primary)' }}>{totalSurveys}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', marginTop: '2px' }}>イベント回答</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', marginTop: '2px' }}>イベント回答 →</div>
           </div>
         )}
         <div className="card" style={{ textAlign: 'center', padding: '12px', gridColumn: (!hasEventSurvey && !hasExhibits) ? '1 / -1' : 'auto' }}>
@@ -125,7 +128,7 @@ export default function TabOverview({
               <button 
                 key={c.id} 
                 className="card" 
-                onClick={() => eventId && router.push(`/admin/events/${eventId}/exhibits/${c.id}`)}
+                onClick={() => currentEventId && router.push(`/admin/events/${currentEventId}/exhibits/${c.id}`)}
                 style={{ 
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   cursor: 'pointer', textAlign: 'left', transition: 'transform 0.1s, box-shadow 0.1s'
@@ -152,7 +155,27 @@ export default function TabOverview({
       {/* イベントアンケート直近 */}
       {hasEventSurvey && (
         <div>
-          <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '8px' }}>イベント回答 (直近3件)</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>イベント回答 (直近3件)</h2>
+            <button
+              onClick={() => currentEventId && router.push(`/admin/events/${currentEventId}/event-survey`)}
+              className="btn-outline"
+              style={{
+                width: 'auto',
+                padding: '4px 12px',
+                fontSize: '0.8rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                cursor: 'pointer',
+                borderRadius: 'var(--radius-full)'
+              }}
+              title="イベント回答一覧を開く"
+            >
+              <span>回答一覧へ</span>
+              <ChevronRight size={14} />
+            </button>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {eventFeedbacks.slice(0, 3).map((s) => {
               const surveyData = {
@@ -190,6 +213,27 @@ export default function TabOverview({
                 </div>
               );
             })}
+            {eventFeedbacks.length > 0 && (
+              <div style={{ textAlign: 'center', marginTop: '6px' }}>
+                <button
+                  className="btn-outline"
+                  onClick={() => currentEventId && router.push(`/admin/events/${currentEventId}/event-survey`)}
+                  style={{
+                    width: 'auto',
+                    padding: '8px 20px',
+                    fontSize: '0.85rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    borderRadius: 'var(--radius-full)'
+                  }}
+                >
+                  <span>すべてのイベント回答を見る（全{totalSurveys}件）</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            )}
             {eventFeedbacks.length === 0 && (
               <div className="card" style={{ padding: '12px', textAlign: 'center', color: 'var(--color-text-light)', fontSize: '0.9rem' }}>
                 まだイベント回答はありません

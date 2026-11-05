@@ -125,7 +125,7 @@ export default function TabExhibitSettings({ exhibits, setExhibits }: { exhibits
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div data-tour="tour-exhibit-settings-content" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <p style={{ fontSize: '0.9rem', color: 'var(--color-text-light)' }}>
         各個別枠の設定を管理します。
       </p>

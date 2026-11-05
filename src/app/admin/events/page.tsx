@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Calendar, Settings, X, HelpCircle, LogOut, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Settings, X, HelpCircle, LogOut, Trash2, HelpCircle as TutorialIcon } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { getAdminEvents, createEvent, deleteEvent } from '../../../actions/event';
+import AuthorEventsTour from '../../../components/admin/AuthorEventsTour';
+import { isTutorialCompleted } from '../../../lib/tutorial';
 
 export default function AdminEventsList() {
   const router = useRouter();
@@ -30,6 +32,10 @@ export default function AdminEventsList() {
   
   const [isCreating, setIsCreating] = useState(false);
 
+  // チュートリアル用ステート
+  const [isTourRunning, setIsTourRunning] = useState(false);
+  const [tourStepIndex, setTourStepIndex] = useState(0);
+
   useEffect(() => {
     const fetchEvents = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -44,6 +50,11 @@ export default function AdminEventsList() {
       const { data, error } = await getAdminEvents(uid);
       if (data) {
         setEvents(data);
+        // 初回かつチュートリアル未完了の場合は自動でツアーを開始
+        if (!isTutorialCompleted() && data.length === 0) {
+          setIsTourRunning(true);
+          setTourStepIndex(0);
+        }
       } else {
         console.error('Failed to fetch events', error);
       }
@@ -51,6 +62,25 @@ export default function AdminEventsList() {
     };
     fetchEvents();
   }, []);
+
+  const handleStartTutorial = () => {
+    setIsTourRunning(true);
+    setTourStepIndex(0);
+  };
+
+  const handleFillSampleData = () => {
+    const today = new Date();
+    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const formatDate = (d: Date) => d.toISOString().split('T')[0];
+
+    setNewEventTitle('秋の卒業制作展 2026');
+    setNewEventStartDate(formatDate(today));
+    setNewEventEndDate(formatDate(nextWeek));
+    setNewEventLocation('展示ホール A');
+    setHasExhibits(true);
+    setExhibitTerm('作家');
+    setNewEventExhibitNames('山田 太郎\n佐藤 花子\n鈴木 一郎');
+  };
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +119,9 @@ export default function AdminEventsList() {
       setHasExhibits(true);
       setExhibitTerm('作家');
       setEvents(prev => [data, ...prev]);
+      if (isTourRunning) {
+        setTourStepIndex(5);
+      }
     } else {
       alert('イベントの作成に失敗しました: ' + (error || '不明なエラー'));
       console.error('Create event error details:', error);
@@ -119,11 +152,30 @@ export default function AdminEventsList() {
           <p className="subtitle" style={{ marginTop: '8px', marginBottom: 0 }}>管理しているイベントを選択してください</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            className="btn-outline" 
+            onClick={handleStartTutorial} 
+            style={{ width: 'auto', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            title="チュートリアルを開始"
+          >
+            <TutorialIcon size={18} />
+            <span className="hide-on-mobile">チュートリアル</span>
+          </button>
           <button className="btn-outline" onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ width: 'auto', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <LogOut size={18} />
             <span className="hide-on-mobile">ログアウト</span>
           </button>
-          <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ width: 'auto', padding: '12px 24px' }}>
+          <button 
+            data-tour="new-event-btn"
+            className="btn-primary" 
+            onClick={() => {
+              setIsModalOpen(true);
+              if (isTourRunning && tourStepIndex === 0) {
+                setTourStepIndex(1);
+              }
+            }} 
+            style={{ width: 'auto', padding: '12px 24px' }}
+          >
             <Plus size={20} />
             <span className="hide-on-mobile">新規イベント</span>
           </button>
@@ -138,12 +190,17 @@ export default function AdminEventsList() {
         </div>
       ) : (
         <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-          {events.map((ev) => (
+          {events.map((ev, index) => (
             <div 
               key={ev.id}
               className="card"
               style={{ cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
-              onClick={() => router.push(`/admin/events/${ev.id}/dashboard`)}
+              onClick={() => {
+                const url = isTourRunning 
+                  ? `/admin/events/${ev.id}/dashboard?tour=continue` 
+                  : `/admin/events/${ev.id}/dashboard`;
+                router.push(url);
+              }}
               onMouseOver={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)';
                 e.currentTarget.style.boxShadow = 'var(--shadow-md)';
@@ -175,7 +232,10 @@ export default function AdminEventsList() {
                 </div>
               </div>
               
-              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--color-border)', fontSize: '0.85rem', color: 'var(--color-primary)', fontWeight: 'bold', textAlign: 'right' }}>
+              <div 
+                {...(index === 0 ? { 'data-tour': 'event-card-dashboard' } : {})}
+                style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--color-border)', fontSize: '0.85rem', color: 'var(--color-primary)', fontWeight: 'bold', textAlign: 'right' }}
+              >
                 ダッシュボードを開く →
               </div>
             </div>
@@ -201,7 +261,7 @@ export default function AdminEventsList() {
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '24px' }}>新規イベントの作成</h2>
             
             <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div className="input-group" style={{ marginBottom: 0 }}>
+              <div data-tour="tour-event-title" className="input-group" style={{ marginBottom: 0 }}>
                 <label className="input-label">イベント名 <span style={{ color: 'red' }}>*</span></label>
                 <input 
                   type="text" 
@@ -212,94 +272,99 @@ export default function AdminEventsList() {
                   placeholder="例：秋の芸術祭 2024"
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className="input-group" style={{ marginBottom: 0 }}>
-                  <label className="input-label">開始日 <span style={{ color: 'red' }}>*</span></label>
-                  <input 
-                    type="date" 
-                    className="input-text" 
-                    value={newEventStartDate} 
-                    onChange={e => setNewEventStartDate(e.target.value)} 
-                    required 
-                  />
+
+              <div data-tour="tour-event-dates" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="input-group" style={{ marginBottom: 0 }}>
+                    <label className="input-label">開始日 <span style={{ color: 'red' }}>*</span></label>
+                    <input 
+                      type="date" 
+                      className="input-text" 
+                      value={newEventStartDate} 
+                      onChange={e => setNewEventStartDate(e.target.value)} 
+                      required 
+                    />
+                  </div>
+                  <div className="input-group" style={{ marginBottom: 0 }}>
+                    <label className="input-label">終了日 <span style={{ color: 'red' }}>*</span></label>
+                    <input 
+                      type="date" 
+                      className="input-text" 
+                      value={newEventEndDate} 
+                      onChange={e => setNewEventEndDate(e.target.value)} 
+                      required 
+                    />
+                  </div>
                 </div>
                 <div className="input-group" style={{ marginBottom: 0 }}>
-                  <label className="input-label">終了日 <span style={{ color: 'red' }}>*</span></label>
+                  <label className="input-label">開催場所</label>
                   <input 
-                    type="date" 
+                    type="text" 
                     className="input-text" 
-                    value={newEventEndDate} 
-                    onChange={e => setNewEventEndDate(e.target.value)} 
-                    required 
+                    value={newEventLocation} 
+                    onChange={e => setNewEventLocation(e.target.value)} 
+                    placeholder="例：〇〇ギャラリー"
                   />
                 </div>
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label">開催場所</label>
-                <input 
-                  type="text" 
-                  className="input-text" 
-                  value={newEventLocation} 
-                  onChange={e => setNewEventLocation(e.target.value)} 
-                  placeholder="例：〇〇ギャラリー"
-                />
               </div>
 
               <div style={{ height: '1px', backgroundColor: 'var(--color-border)', margin: '8px 0' }}></div>
 
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={hasExhibits} 
-                    onChange={e => setHasExhibits(e.target.checked)} 
-                    style={{ width: 'auto' }}
-                  />
-                  <span>個別枠（作家や作品ごと）の感想を集める</span>
-                  <span onClick={(e) => { e.preventDefault(); setShowExhibitHelp(true); }}>
-                    <HelpCircle size={16} style={{ color: 'var(--color-text-light)', cursor: 'pointer' }} />
-                  </span>
-                </label>
-              </div>
-
-              {hasExhibits && (
-                <div style={{ paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div className="input-group" style={{ marginBottom: 0 }}>
-                    <label className="input-label">個別枠の呼び名</label>
-                    <select 
-                      className="input-text" 
-                      value={exhibitTerm} 
-                      onChange={e => setExhibitTerm(e.target.value)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <option value="作家">作家 (Creator)</option>
-                      <option value="作品">作品 (Artwork)</option>
-                      <option value="ブース">ブース (Booth)</option>
-                      <option value="発表者">発表者 (Presenter)</option>
-                    </select>
-                  </div>
-                  <div className="input-group" style={{ marginBottom: 0 }}>
-                    <label className="input-label">個別枠の名前を一括追加（任意）</label>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--color-text-light)', marginTop: 0, marginBottom: '4px' }}>
-                      1行に1つの名前を入力してください。後からでも追加できます。
-                    </p>
-                    <textarea 
-                      className="input-text" 
-                      value={newEventExhibitNames}
-                      onChange={e => setNewEventExhibitNames(e.target.value)}
-                      placeholder={"山田太郎\n鈴木花子\n佐藤次郎"}
-                      rows={4}
-                      style={{ resize: 'vertical' }}
+              <div data-tour="tour-event-exhibits" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={hasExhibits} 
+                      onChange={e => setHasExhibits(e.target.checked)} 
+                      style={{ width: 'auto' }}
                     />
-                  </div>
+                    <span>個別枠（作家や作品ごと）の感想を集める</span>
+                    <span onClick={(e) => { e.preventDefault(); setShowExhibitHelp(true); }}>
+                      <HelpCircle size={16} style={{ color: 'var(--color-text-light)', cursor: 'pointer' }} />
+                    </span>
+                  </label>
                 </div>
-              )}
+
+                {hasExhibits && (
+                  <div style={{ paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div className="input-group" style={{ marginBottom: 0 }}>
+                      <label className="input-label">個別枠の呼び名</label>
+                      <select 
+                        className="input-text" 
+                        value={exhibitTerm} 
+                        onChange={e => setExhibitTerm(e.target.value)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <option value="作家">作家 (Creator)</option>
+                        <option value="作品">作品 (Artwork)</option>
+                        <option value="ブース">ブース (Booth)</option>
+                        <option value="発表者">発表者 (Presenter)</option>
+                      </select>
+                    </div>
+                    <div className="input-group" style={{ marginBottom: 0 }}>
+                      <label className="input-label">個別枠の名前を一括追加（任意）</label>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--color-text-light)', marginTop: 0, marginBottom: '4px' }}>
+                        1行に1つの名前を入力してください。後からでも追加できます。
+                      </p>
+                      <textarea 
+                        className="input-text" 
+                        value={newEventExhibitNames}
+                        onChange={e => setNewEventExhibitNames(e.target.value)}
+                        placeholder={"山田太郎\n鈴木花子\n佐藤次郎"}
+                        rows={4}
+                        style={{ resize: 'vertical' }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
                 <button type="button" className="btn-outline" onClick={() => setIsModalOpen(false)}>
                   キャンセル
                 </button>
-                <button type="submit" className="btn-primary" disabled={isCreating}>
+                <button data-tour="modal-submit-btn" type="submit" className="btn-primary" disabled={isCreating}>
                   {isCreating ? '作成中...' : '作成する'}
                 </button>
               </div>
@@ -337,6 +402,18 @@ export default function AdminEventsList() {
           </div>
         </div>
       )}
+
+      {/* 作家側チュートリアルツアー */}
+      <AuthorEventsTour
+        run={isTourRunning}
+        stepIndex={tourStepIndex}
+        onStepChange={setTourStepIndex}
+        onClose={() => setIsTourRunning(false)}
+        onOpenModal={() => setIsModalOpen(true)}
+        onFillSampleData={handleFillSampleData}
+        isTitleFilled={Boolean(newEventTitle.trim())}
+        areDatesFilled={Boolean(newEventStartDate && newEventEndDate)}
+      />
     </div>
   );
 }

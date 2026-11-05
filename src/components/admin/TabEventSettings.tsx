@@ -136,7 +136,7 @@ export default function TabEventSettings() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div data-tour="tour-event-settings-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <p style={{ fontSize: '0.9rem', color: 'var(--color-text-light)' }}>
         イベント全体に関する設定を管理します。
       </p>

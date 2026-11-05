@@ -1,9 +1,10 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { Users, BarChart2, Copy, LogOut, Settings } from 'lucide-react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { Users, BarChart2, Copy, LogOut, Settings, ArrowLeft, HelpCircle } from 'lucide-react';
 import { supabase } from '../../../../../lib/supabase';
 import { useEventSettings } from '../../../../../context/EventSettingsContext';
+import AuthorDashboardTour, { DashboardTabKey } from '../../../../../components/admin/AuthorDashboardTour';
 
 import type { Exhibit, ExhibitFeedback, EventFeedback } from '../../../../../types';
 
@@ -14,12 +15,16 @@ import TabEventSettings from '../../../../../components/admin/TabEventSettings';
 
 type TabKey = 'overview' | 'exhibits' | 'exhibit-settings' | 'event-settings';
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const eventId = params?.eventId as string | undefined;
 
-  const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const isTourFromUrl = searchParams.get('tour') === 'continue';
+  const [activeTab, setActiveTab] = useState<TabKey>(isTourFromUrl ? 'exhibits' : 'overview');
+  const [isTourRunning, setIsTourRunning] = useState(false);
+
   const { settings } = useEventSettings();
   const [exhibits, setExhibits] = useState<Exhibit[]>([]);
   const [exhibitFeedbacks, setExhibitFeedbacks] = useState<ExhibitFeedback[]>([]);
@@ -49,11 +54,26 @@ export default function AdminDashboard() {
       setEventFeedbacks(parsedSData);
       
       setLoading(false);
+
+      // データ読み込み完了後、URLにtour=continueがあれば自動でツアーを開始
+      if (searchParams.get('tour') === 'continue') {
+        setActiveTab('exhibits');
+        setIsTourRunning(true);
+      }
     }).catch(err => {
       console.error(err);
       setLoading(false);
     });
-  }, [eventId]);
+  }, [eventId, searchParams]);
+
+  const handleStartTutorial = () => {
+    setActiveTab('exhibits');
+    setIsTourRunning(true);
+  };
+
+  const handleTabChange = useCallback((tab: DashboardTabKey) => {
+    setActiveTab(tab as TabKey);
+  }, []);
 
   const tabs: { key: TabKey; label: string; icon: React.ReactNode }[] = [
     { key: 'overview',         label: '感想概要',       icon: <BarChart2 size={15} /> },
@@ -69,23 +89,60 @@ export default function AdminDashboard() {
   return (
     <div className="content-area fade-in">
       {/* Header bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 className="title" style={{ margin: 0 }}>{settings.eventName || '管理ダッシュボード'}</h1>
-        <button
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '8px 12px', borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--color-border)', fontSize: '0.85rem',
-            color: 'var(--color-text-light)', cursor: 'pointer',
-          }}
-          onClick={async () => {
-            await supabase!.auth.signOut();
-            router.push('/admin');
-          }}
-        >
-          <LogOut size={14} />
-          ログアウト
-        </button>
+      <div 
+        data-tour="dashboard-header"
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button
+            onClick={() => router.push('/admin/events')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              padding: '6px 10px', borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--color-border)', fontSize: '0.8rem',
+              color: 'var(--color-text-light)', cursor: 'pointer',
+              backgroundColor: 'var(--color-surface)'
+            }}
+            title="イベント一覧に戻る"
+          >
+            <ArrowLeft size={14} />
+            <span className="hide-on-mobile">一覧へ</span>
+          </button>
+          <h1 className="title" style={{ margin: 0 }}>{settings.eventName || '管理ダッシュボード'}</h1>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={handleStartTutorial}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '8px 12px', borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--color-border)', fontSize: '0.85rem',
+              color: 'var(--color-text)', cursor: 'pointer',
+              backgroundColor: 'var(--color-surface)',
+            }}
+            title="チュートリアルを開始"
+          >
+            <HelpCircle size={14} />
+            <span className="hide-on-mobile">チュートリアル</span>
+          </button>
+
+          <button
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '8px 12px', borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--color-border)', fontSize: '0.85rem',
+              color: 'var(--color-text-light)', cursor: 'pointer',
+            }}
+            onClick={async () => {
+              await supabase!.auth.signOut();
+              router.push('/admin');
+            }}
+          >
+            <LogOut size={14} />
+            ログアウト
+          </button>
+        </div>
       </div>
 
       {/* Tab bar */}
@@ -101,6 +158,10 @@ export default function AdminDashboard() {
         {tabs.map((tab) => (
           <button
             key={tab.key}
+            {...(tab.key === 'exhibits' ? { 'data-tour': 'tab-exhibits' } : {})}
+            {...(tab.key === 'overview' ? { 'data-tour': 'tab-overview' } : {})}
+            {...(tab.key === 'exhibit-settings' ? { 'data-tour': 'tab-exhibit-settings' } : {})}
+            {...(tab.key === 'event-settings' ? { 'data-tour': 'tab-event-settings' } : {})}
             onClick={() => setActiveTab(tab.key)}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
@@ -120,6 +181,7 @@ export default function AdminDashboard() {
       {/* Tab content */}
       {activeTab === 'overview' && (
         <TabOverview 
+          eventId={eventId}
           exhibits={exhibits} 
           exhibitFeedbacks={exhibitFeedbacks} 
           eventFeedbacks={eventFeedbacks} 
@@ -135,6 +197,22 @@ export default function AdminDashboard() {
       )}
       {activeTab === 'exhibit-settings' && <TabExhibitSettings exhibits={exhibits} setExhibits={setExhibits} />}
       {activeTab === 'event-settings'   && <TabEventSettings />}
+
+      {/* ダッシュボード側チュートリアルツアー */}
+      <AuthorDashboardTour 
+        run={isTourRunning}
+        onClose={() => setIsTourRunning(false)}
+        onTabChange={handleTabChange} 
+        hasExhibits={settings.hasExhibits} 
+      />
     </div>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <Suspense fallback={<div className="content-area fade-in" style={{ justifyContent: 'center', alignItems: 'center' }}>読み込み中...</div>}>
+      <AdminDashboardContent />
+    </Suspense>
   );
 }

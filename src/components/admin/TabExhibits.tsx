@@ -43,7 +43,7 @@ export default function TabExhibits({ exhibits, hasExhibits = true, eventId: pro
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div data-tour="tour-exhibits-content" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <p style={{ fontSize: '0.9rem', color: 'var(--color-text-light)' }}>
         各個別枠の担当者にURLをコピーして共有してください。対象者はそのURLから自分宛ての感想を閲覧できます。<br/>
         イベント全体の感想URLは、主催者やスタッフで確認用にご利用ください。
