@@ -129,9 +129,9 @@ export default function TabExhibits({ exhibits, hasExhibits = true, eventId: pro
           </div>
 
           {exhibits.map((exhibit) => {
-            const adminExhibitUrl = `${origin}/admin/events/${eventId}/exhibits/${exhibit.id}`;
+            const exhibitShareUrl = `${origin}/events/${eventId}/exhibits/${exhibit.shareToken}`;
             const surveyExhibitUrl = `${origin}/events/${eventId}/survey/wizard?context=creator&exhibitId=${exhibit.id}`;
-            const isCopiedAdmin = copiedToken === `admin-${exhibit.id}`;
+            const isCopiedShare = copiedToken === `share-${exhibit.id}`;
             const isCopiedSurvey = copiedToken === `survey-${exhibit.id}`;
 
             return (
@@ -150,25 +150,25 @@ export default function TabExhibits({ exhibits, hasExhibits = true, eventId: pro
                     wordBreak: 'break-all', fontFamily: 'monospace',
                     backgroundColor: '#f5f5f5', padding: '8px 12px', borderRadius: 'var(--radius-sm)',
                   }}>
-                    {adminExhibitUrl}
+                    {exhibitShareUrl}
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
-                      onClick={() => handleCopyUrl(adminExhibitUrl, `admin-${exhibit.id}`)}
+                      onClick={() => handleCopyUrl(exhibitShareUrl, `share-${exhibit.id}`)}
                       style={{
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                         padding: '10px', borderRadius: 'var(--radius-sm)',
-                        border: `1px solid ${isCopiedAdmin ? '#4CAF50' : 'var(--color-border)'}`,
-                        backgroundColor: isCopiedAdmin ? '#E8F5E9' : 'var(--color-surface)',
-                        color: isCopiedAdmin ? '#2E7D32' : 'var(--color-text)',
+                        border: `1px solid ${isCopiedShare ? '#4CAF50' : 'var(--color-border)'}`,
+                        backgroundColor: isCopiedShare ? '#E8F5E9' : 'var(--color-surface)',
+                        color: isCopiedShare ? '#2E7D32' : 'var(--color-text)',
                         fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
                       }}
                     >
-                      {isCopiedAdmin ? <Check size={16} /> : <Copy size={16} />}
-                      {isCopiedAdmin ? 'コピー済み' : 'URLをコピー'}
+                      {isCopiedShare ? <Check size={16} /> : <Copy size={16} />}
+                      {isCopiedShare ? 'コピー済み' : 'URLをコピー'}
                     </button>
                     <a
-                      href={adminExhibitUrl} target="_blank" rel="noopener noreferrer"
+                      href={exhibitShareUrl} target="_blank" rel="noopener noreferrer"
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                         padding: '10px 14px', borderRadius: 'var(--radius-sm)',
